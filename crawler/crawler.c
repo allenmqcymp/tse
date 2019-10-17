@@ -15,6 +15,7 @@
 #include <inttypes.h>
 
 #include "webpage.h"
+#include "queue.h"
 
 int main(void) {
 	char* seed = "https://thayer.github.io/engs50/";
@@ -32,10 +33,20 @@ int main(void) {
 	// scanned the fetched html for urls and print whether the url is internal or not
 	int pos = 0;
 	char *url = NULL;
+	queue_t *url_queue = qopen();
 	while ((pos = webpage_getNextURL(page, pos, &url)) > 0) {
 		printf("Found url: %s, internal?: %s\n", url, IsInternalURL(url) ? "YES" : "NO");
+		// for each internal url, put it in a queue
+		if (IsInternalURL(url)) {
+			// create a new webpage
+			webpage_t *pg = webpage_new(url, 0, NULL);
+					
+		}
 		free(url);
 	}
+
+		
+
 
 
 	webpage_delete(page);
