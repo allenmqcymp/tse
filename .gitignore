@@ -1,7 +1,6 @@
 
 # Object files and libraries
 *.o
-*.a
 *.gch
 
 # emacs files
