@@ -20,6 +20,7 @@
 int main(void) {
 	char* seed = "https://thayer.github.io/engs50/";
 	webpage_t *page = webpage_new(seed, 0, NULL);
+	int depth = 0;
 	if (page == NULL) {
 		printf("webpage is null\n");
 		exit(EXIT_FAILURE);
@@ -39,17 +40,29 @@ int main(void) {
 		// for each internal url, put it in a queue
 		if (IsInternalURL(url)) {
 			// create a new webpage
-			webpage_t *pg = webpage_new(url, 0, NULL);
-					
+			webpage_t *pg = webpage_new(url, depth + 1, NULL);
+			// place it in the queue
+			qput(url_queue, pg);
 		}
 		free(url);
 	}
+	url = NULL;
+	
+	webpage_t *pg = (webpage_t *) qget(url_queue);
+	// check that there are no internal urls in the queue
+	while (pg != NULL) {
+		if (!IsInternalURL(webpage_getURL(pg))) {
+			exit(EXIT_FAILURE);
+		}
+		pg = (webpage_t *) qget(url_queue);
+		// free the webpage while we're at it
+		webpage_delete(pg);
+	}
 
-		
-
-
-
+	// free the seed page
 	webpage_delete(page);
+	// close the queue
+	qclose(url_queue);
 
 	exit(EXIT_SUCCESS);
 }
