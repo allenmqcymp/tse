@@ -41,7 +41,6 @@ int main(void) {
 		if (IsInternalURL(url)) {
 			// create a new webpage
 			webpage_t *pg = webpage_new(url, depth + 1, NULL);
-			printf("%s IS THE URL\n", url);
 			// place it in the queue
 			qput(url_queue, pg);
 		}
@@ -56,12 +55,12 @@ int main(void) {
 			printf("%s is not an internal page\n", webpage_getURL(pg));
 			exit(EXIT_FAILURE);
 		}
+		// print out the url of the webpage
+		printf("Inside the queue: %s\n", webpage_getURL(pg));
 		// free the webpage while we're at it
 		webpage_delete(pg);
 		pg = (webpage_t *) qget(url_queue);
-
 	}
-
 	// free the seed page
 	webpage_delete(page);
 	// close the queue
