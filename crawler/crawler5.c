@@ -74,9 +74,9 @@ int32_t pagesave(webpage_t *pagep, int id, char *dirname) {
 	DIR* dir = opendir(new_dirname);
 	if (ENOENT == errno){
 		//directory does not exist
-		closedir(dir);
 		mkdir(new_dirname, 0700);
 	}
+	closedir(dir);
 
 	// check if it's possible to write to the directory
 	if (access(new_dirname, W_OK) != 0) {
@@ -166,10 +166,10 @@ int main(void) {
 	}
 	// free the seed page
 	webpage_delete(page);
-	// close the queue
-	qclose(url_queue);
 	// close the hashtable
 	hclose(url_hashtable);
+	// close the queue
+	qclose(url_queue);
 
 	exit(EXIT_SUCCESS);
 }
