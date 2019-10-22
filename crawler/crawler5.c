@@ -117,7 +117,7 @@ int main(void) {
 	hashtable_t *url_hashtable = hopen(100);
 
 	// save the page
-    int32_t res = pagesave(page, 1, "../tse/pages/");
+    int32_t res = pagesave(page, 1, "../pages/");
     if (res == -1) {
         printf("failed to save page\n");
     }
