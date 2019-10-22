@@ -14,6 +14,9 @@
 #include <string.h>
 #include <inttypes.h>
 #include <errno.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/stat.h>
 
 #include "webpage.h"
 #include "queue.h"
