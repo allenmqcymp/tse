@@ -66,6 +66,7 @@ int main(void) {
 			}
 		}
 	}
+	free(url);
 	url = NULL;
 
 		
