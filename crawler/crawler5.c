@@ -67,7 +67,7 @@ int32_t pagesave(webpage_t *pagep, int id, char *dirname) {
     int depth = webpage_getDepth(pagep);
 
     char *fname = malloc(sizeof(char) * strlen(new_dirname) + sizeof(char) * max_id_len);
-    sprintf(fname, "%s/%d.txt", new_dirname, id);
+    sprintf(fname, "%s/%d", new_dirname, id);
 
 	// check if it's possible to write to the directory
 	if (access(fname, W_OK) != 0) {
