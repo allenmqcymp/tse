@@ -2,7 +2,7 @@
 
 Dartmouth College ENGS50, Fall 2019 
 
-Team members: Allen Ma (@allenmqcymp), Stjepan Vrbic (@stjepanvrbic), Joe Signorelli (@sjsig)
+Team members: Allen Ma (@allenmqcymp), Stjepan Vrbic (@stjepanvrbic)
 
 Modular structure of search engine includes:
 * crawler
