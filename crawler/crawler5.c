@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <inttypes.h>
+#include <errno.h>
 
 #include "webpage.h"
 #include "queue.h"
@@ -26,6 +27,67 @@ bool url_search(void *page_url, const void *search_url) {
 	}
 	return false;
 }
+
+/*
+ *
+ * This function saves a fetched page in directory dirname with filename designated by id.
+ * The content of the file named id should consist of four elements:
+ * - the URL that the page was fetched from on one line
+ * - the depth assigned to the webpage
+ * - the length of the html associated with the page, on one line
+ * - the HTML associated with the page
+*/ 
+int32_t pagesave(webpage_t *pagep, int id, char *dirname) {
+
+	int max_id_len = 32;
+
+    // strip off the trailing slash of dirname, if it exists
+    char *lastchar =  &dirname[strlen(dirname) - 1];
+	char *new_dirname = malloc(sizeof(char) * strlen(dirname));
+    if (strcmp("/", lastchar) == 0) {
+        // strip off the last character - set the last character to be NUL 
+		strncpy(new_dirname, dirname, sizeof(char) * (strlen(dirname) - 1));
+    }
+	else {
+		strncpy(new_dirname, dirname, sizeof(char) * strlen(dirname));
+	}
+
+	printf("got dirname as %s\n", dirname);
+	printf("got new dirname as %s\n", new_dirname);
+
+    // get the html from the webpage
+    char *html = webpage_getHTML(pagep);
+    int html_len = webpage_getHTMLlen(pagep);
+    // get the url from the webpage
+    char *url = webpage_getURL(pagep);
+    // get the depth from the webpage
+    int depth = webpage_getDepth(pagep);
+
+    char *fname = malloc(sizeof(char) * strlen(new_dirname) + sizeof(char) * max_id_len);
+    sprintf(fname, "%s/%d", new_dirname, id);
+
+	// check if it's possible to write to the directory
+	if (access(fname, W_OK) != 0) {
+		chmod(fname, W_OK);
+	}
+
+    FILE *f = fopen(fname, "w");
+    if (f == NULL) {
+        printf("failed to open file %s\n", fname);
+		printf("Error %d \n", errno);
+        return -1;
+    }
+
+    fprintf(f, "%s\n", url);
+    fprintf(f, "%d\n", depth);
+    fprintf(f, "%d\n", html_len);
+    fprintf(f, "%s\n", html);
+    fclose(f);
+	free(new_dirname);
+	free(fname);
+    return 0;
+}
+
 
 int main(void) {
 
@@ -49,6 +111,12 @@ int main(void) {
 
 	// make a hashtable of visited webpages
 	hashtable_t *url_hashtable = hopen(100);
+
+	// save the page
+    int32_t res = pagesave(page, 1, "../tse/pages/");
+    if (res == -1) {
+        printf("failed to save page\n");
+    }
 
 	while ((pos = webpage_getNextURL(page, pos, &url)) > 0) {
 		// for each internal url, put it in a queue
@@ -91,5 +159,3 @@ int main(void) {
 
 	exit(EXIT_SUCCESS);
 }
-
-

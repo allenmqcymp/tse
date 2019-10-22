@@ -2,6 +2,7 @@
 # Object files and libraries
 *.o
 *.a
+**/*.a
 *.gch
 
 # emacs files
@@ -11,11 +12,14 @@
 
 # vim files
 *.swp
+**/*.swp
 
 # debugging symbols
-*.dYSM
+*.dSYM
+**/*.dSYM
 
 # mac
+**/.DS_Store
 .DS_Store
 
 
