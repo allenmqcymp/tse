@@ -66,7 +66,6 @@ int main(void) {
 			}
 		}
 	}
-	free(url);
 
 		
 	webpage_t *pg = (webpage_t *) qget(url_queue);
@@ -91,6 +90,7 @@ int main(void) {
 	// close the hashtable
 	happly(url_hashtable, free);
 	hclose(url_hashtable);
+	free(url);
 
 	exit(EXIT_SUCCESS);
 }
