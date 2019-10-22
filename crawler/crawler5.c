@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <inttypes.h>
+#include <dirent.h>
 #include <errno.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -48,11 +49,11 @@ int32_t pagesave(webpage_t *pagep, int id, char *dirname) {
     char *lastchar =  &dirname[strlen(dirname) - 1];
 	char *new_dirname = malloc(sizeof(char) * strlen(dirname));
     if (strcmp("/", lastchar) == 0) {
-        // strip off the last character - set the last character to be NUL 
-		strncpy(new_dirname, dirname, sizeof(char) * (strlen(dirname) - 1));
+        strcpy(new_dirname, dirname);
+		new_dirname[strlen(new_dirname)-1] = 0;
     }
 	else {
-		strncpy(new_dirname, dirname, sizeof(char) * strlen(dirname));
+		strcpy(new_dirname, dirname);
 	}
 
 	printf("got dirname as %s\n", dirname);
@@ -69,12 +70,21 @@ int32_t pagesave(webpage_t *pagep, int id, char *dirname) {
     char *fname = malloc(sizeof(char) * strlen(new_dirname) + sizeof(char) * max_id_len);
     sprintf(fname, "%s/%d", new_dirname, id);
 
-	// check if it's possible to write to the directory
-	if (access(fname, W_OK) != 0) {
-		printf("cannot access %s!!\n", fname);
-		chmod(fname, W_OK);
+	//check if directory exists, if not, create it
+	DIR* dir = opendir(new_dirname);
+	if (ENOENT == errno){
+		//directory does not exist
+		closedir(dir);
+		mkdir(new_dirname, 0700);
 	}
 
+	// check if it's possible to write to the directory
+	if (access(new_dirname, W_OK) != 0) {
+		printf("cannot access %s\n", new_dirname);
+		chmod(new_dirname, W_OK);
+	}
+
+	//make the file and check if everything went right
     FILE *f = fopen(fname, "w");
     if (f == NULL) {
         printf("failed to open file %s\n", fname);
@@ -117,7 +127,7 @@ int main(void) {
 	hashtable_t *url_hashtable = hopen(100);
 
 	// save the page
-    int32_t res = pagesave(page, 1, "../tse/pages/");
+    int32_t res = pagesave(page, 1, "../pages/");
     if (res == -1) {
         printf("failed to save page\n");
     }
