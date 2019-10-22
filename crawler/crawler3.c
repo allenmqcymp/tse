@@ -29,7 +29,8 @@ bool url_search(void *page_url, const void *search_url) {
 
 int main(void) {
 
-	char* seed = "https://thayer.github.io/engs50/";
+	char* seed = "https://thayer.github.io/engs50";
+	printf("%d", sizeof(char) * strlen(seed));
 	webpage_t *page = webpage_new(seed, 0, NULL);
 	int depth = 0;
 	if (page == NULL) {
@@ -41,16 +42,16 @@ int main(void) {
 		printf("failed to fetch html for page\n");
 		exit(EXIT_FAILURE);
 	}
-
+	
 	// scanned the fetched html for urls and print whether the url is internal or not
 	int pos = 0;
-	char *url = NULL;
+	char *url;
 	queue_t *url_queue = qopen();
 
 	// make a hashtable of visited webpages
 	hashtable_t *url_hashtable = hopen(100);
-
-	while ((pos = webpage_getNextURL(page, pos, &url)) > 0) {
+	pos = webpage_getNextURL(page, pos, &url);
+	while (pos > 0) {
 		// for each internal url, put it in a queue
 		if (IsInternalURL(url)) {
 			// check if the url is in the hashtable
@@ -65,13 +66,13 @@ int main(void) {
 				qput(url_queue, pg);
 			}
 		}
+	pos = webpage_getNextURL(page, pos, &url);
 	}
-	free(url);
-
-		
+	
 	webpage_t *pg = (webpage_t *) qget(url_queue);
 	// check that there are no internal urls in the queue
 	while (pg != NULL) {
+		
 		if (!IsInternalURL(webpage_getURL(pg))) {
 			printf("%s is not an internal page\n", webpage_getURL(pg));
 			exit(EXIT_FAILURE);
@@ -82,6 +83,7 @@ int main(void) {
 		webpage_delete(pg);
 		pg = (webpage_t *) qget(url_queue);
 	}
+	free(url);
 	// free the seed page
 	webpage_delete(page);
 	// delete the webpage ptr
