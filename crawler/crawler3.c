@@ -5,7 +5,7 @@
  * Created: Thu Oct 17 13:02:37 2019 (-0400)
  * Version: 
  * 
- * Description: 
+ * Description: hashtable of urls
  * 
  */
 
@@ -66,6 +66,7 @@ int main(void) {
 			}
 		}
 	}
+	free(url);
 	url = NULL;
 
 		
