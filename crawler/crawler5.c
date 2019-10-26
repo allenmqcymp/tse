@@ -47,7 +47,7 @@ int32_t pagesave(webpage_t *pagep, int id, char *dirname) {
 
     // strip off the trailing slash of dirname, if it exists
     char *lastchar =  &dirname[strlen(dirname) - 1];
-	char *new_dirname = malloc(sizeof(char) * strlen(dirname));
+	char *new_dirname = malloc(sizeof(char) * strlen(dirname) + 1);
     if (strcmp("/", lastchar) == 0) {
         strcpy(new_dirname, dirname);
 		new_dirname[strlen(new_dirname)-1] = 0;
@@ -163,15 +163,12 @@ int main(void) {
 		webpage_delete(pg);
 		pg = (webpage_t *) qget(url_queue);
 	}
-	free(url);
 	// free the seed page
 	webpage_delete(page);
 	// delete the webpage ptr
 	// close the queue
-	qapply(url_queue, webpage_delete);
 	qclose(url_queue);
 	// close the hashtable
-	happly(url_hashtable, free);
 	hclose(url_hashtable);
 
 	exit(EXIT_SUCCESS);

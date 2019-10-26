@@ -30,7 +30,6 @@ bool url_search(void *page_url, const void *search_url) {
 int main(void) {
 
 	char* seed = "https://thayer.github.io/engs50";
-	printf("%d", sizeof(char) * strlen(seed));
 	webpage_t *page = webpage_new(seed, 0, NULL);
 	int depth = 0;
 	if (page == NULL) {
@@ -70,7 +69,6 @@ int main(void) {
 		}
 		pos = webpage_getNextURL(page, pos, &url);
 	}
-	free(url);
 	
 	webpage_t *pg = (webpage_t *) qget(url_queue);
 	// check that there are no internal urls in the queue

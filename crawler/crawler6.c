@@ -47,7 +47,7 @@ int32_t pagesave(webpage_t *pagep, int id, char *dirname) {
 
     // strip off the trailing slash of dirname, if it exists
     char *lastchar =  &dirname[strlen(dirname) - 1];
-	char *new_dirname = malloc(sizeof(char) * strlen(dirname));
+	char *new_dirname = malloc(sizeof(char) * strlen(dirname) + 1);
     if (strcmp("/", lastchar) == 0) {
         strcpy(new_dirname, dirname);
 		new_dirname[strlen(new_dirname)-1] = 0;
@@ -55,10 +55,6 @@ int32_t pagesave(webpage_t *pagep, int id, char *dirname) {
 	else {
 		strcpy(new_dirname, dirname);
 	}
-
-	printf("got dirname as %s\n", dirname);
-	printf("got new dirname as %s\n", new_dirname);
-
     // get the html from the webpage
     char *html = webpage_getHTML(pagep);
     int html_len = webpage_getHTMLlen(pagep);
@@ -67,7 +63,7 @@ int32_t pagesave(webpage_t *pagep, int id, char *dirname) {
     // get the depth from the webpage
     int depth = webpage_getDepth(pagep);
 
-    char *fname = malloc(sizeof(char) * strlen(new_dirname) + sizeof(char) * max_id_len);
+    char *fname = malloc(sizeof(char) * strlen(new_dirname) + sizeof(char) * max_id_len + 1);
     sprintf(fname, "%s/%d", new_dirname, id);
 
 	//check if directory exists, if not, create it
@@ -110,7 +106,7 @@ int main(int argc, char * argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    char *seed_url = malloc(sizeof(char) * strlen(argv[1]));
+    char *seed_url = malloc(sizeof(char) * strlen(argv[1]) + 1);
     strcpy(seed_url, argv[1]); 
     char *pagedir = argv[2];
     int maxdepth = atoi(argv[3]);
@@ -129,11 +125,6 @@ int main(int argc, char * argv[]) {
 	
 	if (!webpage_fetch(seed_page)) {
 		printf("failed to fetch seed page html\n");
-		exit(EXIT_FAILURE);
-	}
-
-	if(!webpage_fetch(seed_page)) {
-		printf("failed to fetch html for page\n");
 		exit(EXIT_FAILURE);
 	}
 
@@ -161,13 +152,10 @@ int main(int argc, char * argv[]) {
 
     webpage_t *q;
     while ((q = (webpage_t *)qget(url_queue)) != NULL){
-        printf("it's outside the loop");
         int pos = 0;
         char *q_url = NULL;
         pos = webpage_getNextURL(q, pos, &q_url);
-        printf("%d", pos);
         while (pos > 0) {
-            printf("it's in the loop");
             fflush(stdout);
             int depth = webpage_getDepth(q);
             if (depth > maxdepth){
@@ -182,27 +170,25 @@ int main(int argc, char * argv[]) {
                     hput(url_hashtable, q_url, q_url, sizeof(q_url));
                     // create a new webpage
                     webpage_t *pg = webpage_new(q_url, depth + 1, NULL);
-                    printf("%s\n", webpage_getURL(pg));
+                    webpage_fetch(pg);
                     // place it in the queue
                     
                     qput(url_queue, pg);
                     // save the page under id
-                    
-                    pagesave(pg, id, pagedir);
-                    
+                    if (webpage_getHTMLlen(pg) != 47){
+                        pagesave(pg, id, pagedir);
+                    }
                     id++;
                 }else{
-                    
                     free(q_url);
                 }
             }
             pos = webpage_getNextURL(q, pos, &q_url);
         }
-        
+        webpage_delete(q);
         free(q_url);
     }
     // free the seed page
-	webpage_delete(seed_page);
 	// close the queue
 	qclose(url_queue);
 	// close the hashtable
