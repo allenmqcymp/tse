@@ -43,6 +43,8 @@ bool url_search(void *page_url, const void *search_url) {
 */ 
 int32_t pagesave(webpage_t *pagep, int id, char *dirname) {
 
+	printf("in pagesave\n");
+
 	int max_id_len = 32;
 
     // strip off the trailing slash of dirname, if it exists
@@ -63,10 +65,17 @@ int32_t pagesave(webpage_t *pagep, int id, char *dirname) {
     char *url = webpage_getURL(pagep);
     // get the depth from the webpage
     int depth = webpage_getDepth(pagep);
+    
+    printf("in pagesave url is %s\n", url);
+    printf("in pagesave id is %d\n", id);
 
     char *fname = malloc(sizeof(char) * strlen(new_dirname) + sizeof(char) * max_id_len);
     sprintf(fname, "%s/%d", new_dirname, id);
+    
+    printf("inpagesave: new_dirname is %s\n", new_dirname);
+    
 
+<<<<<<< HEAD
 	//check if directory exists, if not, create it
 	DIR* dir = opendir(new_dirname);
 	if (ENOENT == errno){
@@ -74,6 +83,16 @@ int32_t pagesave(webpage_t *pagep, int id, char *dirname) {
 		mkdir(new_dirname, 0700);
 	}
 	closedir(dir);
+=======
+	// check that new_dirname is a valid directory
+    struct stat sb;
+    if (stat(new_dirname, &sb) != 0 || !S_ISDIR(sb.st_mode)) {
+        printf("%s is not a valid directory, so making it\n", new_dirname);
+        mkdir(new_dirname, 0700);
+    }
+    
+    printf("in pagesave, fname is %s\n", fname);
+>>>>>>> eb6d32c5d31b06b2f464716cc33af85fd0d88809
 
 	// check if it's possible to write to the directory
 	if (access(new_dirname, W_OK) != 0) {
@@ -88,6 +107,8 @@ int32_t pagesave(webpage_t *pagep, int id, char *dirname) {
 		printf("Error %d \n", errno);
         return -1;
     }
+    
+    printf("in pagesave still\n");
 
     fprintf(f, "%s\n", url);
     fprintf(f, "%d\n", depth);
@@ -96,6 +117,7 @@ int32_t pagesave(webpage_t *pagep, int id, char *dirname) {
     fclose(f);
 	free(new_dirname);
 	free(fname);
+	printf("returning out of pagesave\n");
     return 0;
 }
 
@@ -107,19 +129,25 @@ int main(int argc, char * argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    char *seed_url = argv[1];
+    char *seed_url = malloc(sizeof(char) * strlen(argv[1]));
+    strcpy(seed_url, argv[1]); 
     char *pagedir = argv[2];
     int maxdepth = atoi(argv[3]);
 	webpage_t *seed_page = webpage_new(seed_url, 0, NULL);
     // check that pagedir is a valid directory
     struct stat sb;
     if (stat(pagedir, &sb) != 0 || !S_ISDIR(sb.st_mode)) {
-        printf("%s is not a valid directory\n", pagedir);
-        exit(EXIT_FAILURE);
+        printf("%s is not a valid directory, so making it\n", pagedir);
+        mkdir(pagedir, 0700);
     }
 
 	if (seed_page == NULL) {
 		printf("seed page is null\n");
+		exit(EXIT_FAILURE);
+	}
+	
+	if (!webpage_fetch(seed_page)) {
+		printf("failed to fetch seed page html\n");
 		exit(EXIT_FAILURE);
 	}
 
@@ -149,6 +177,8 @@ int main(int argc, char * argv[]) {
     //put the seed page into the hash and the queue
     qput(url_queue, seed_page);
     hput(url_hashtable, seed_url, seed_url, sizeof(seed_url));
+    
+    printf("seed page URL is %s\n", webpage_getURL(seed_page));
 
     webpage_t *q;
     while ((q = (webpage_t *)qget(url_queue)) != NULL){
@@ -184,6 +214,7 @@ int main(int argc, char * argv[]) {
                     free(q_url);
                 }
             }
+            pos = webpage_getNextURL(q_page, pos, &q_url);
         }
         
         free(q_url);

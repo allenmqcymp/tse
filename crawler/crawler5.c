@@ -166,6 +166,7 @@ int main(void) {
 		webpage_delete(pg);
 		pg = (webpage_t *) qget(url_queue);
 	}
+	free(url);
 	// free the seed page
 	webpage_delete(page);
 	// delete the webpage ptr
