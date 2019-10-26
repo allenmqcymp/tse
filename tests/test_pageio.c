@@ -28,7 +28,6 @@ int main(void) {
     // save the webpage to another file
     pagesave(test_pg, 2, "../pages/");
     // verify that the two files are the same
-    printf("html is %s\n", webpage_getHTML(test_pg));
     system("diff ../pages/1 ../pages/2");
 	webpage_delete(test_pg);
     exit(EXIT_SUCCESS);
