@@ -43,6 +43,8 @@ bool url_search(void *page_url, const void *search_url) {
 */ 
 int32_t pagesave(webpage_t *pagep, int id, char *dirname) {
 
+    //pagep = webpage_new()
+
 	int max_id_len = 32;
 
     // strip off the trailing slash of dirname, if it exists
@@ -55,9 +57,6 @@ int32_t pagesave(webpage_t *pagep, int id, char *dirname) {
 	else {
 		strcpy(new_dirname, dirname);
 	}
-
-	printf("got dirname as %s\n", dirname);
-	printf("got new dirname as %s\n", new_dirname);
 
     // get the html from the webpage
     char *html = webpage_getHTML(pagep);
@@ -91,7 +90,6 @@ int32_t pagesave(webpage_t *pagep, int id, char *dirname) {
 		printf("Error %d \n", errno);
         return -1;
     }
-
     fprintf(f, "%s\n", url);
     fprintf(f, "%d\n", depth);
     fprintf(f, "%d\n", html_len);
@@ -132,11 +130,6 @@ int main(int argc, char * argv[]) {
 		exit(EXIT_FAILURE);
 	}
 
-	if(!webpage_fetch(seed_page)) {
-		printf("failed to fetch html for page\n");
-		exit(EXIT_FAILURE);
-	}
-
 	// scanned the fetched html for urls and print whether the url is internal or not
 	int pos = 0;
 	queue_t *url_queue = qopen();
@@ -161,13 +154,10 @@ int main(int argc, char * argv[]) {
 
     webpage_t *q;
     while ((q = (webpage_t *)qget(url_queue)) != NULL){
-        printf("it's outside the loop");
         int pos = 0;
         char *q_url = NULL;
         pos = webpage_getNextURL(q, pos, &q_url);
-        printf("%d", pos);
         while (pos > 0) {
-            printf("it's in the loop");
             fflush(stdout);
             int depth = webpage_getDepth(q);
             if (depth > maxdepth){
@@ -178,18 +168,17 @@ int main(int argc, char * argv[]) {
                 // check if the url is in the hashtable
                 if (hsearch(url_hashtable, &url_search, q_url, sizeof(q_url)) == NULL) {
                     // add the url to the hashtable
-                    
                     hput(url_hashtable, q_url, q_url, sizeof(q_url));
                     // create a new webpage
                     webpage_t *pg = webpage_new(q_url, depth + 1, NULL);
-                    printf("%s\n", webpage_getURL(pg));
+                    webpage_fetch(pg);
                     // place it in the queue
-                    
-                    qput(url_queue, pg);
-                    // save the page under id
-                    
-                    pagesave(pg, id, pagedir);
-                    
+                    if (webpage_getHTMLlen(pg) != 47){
+                        qput(url_queue, pg);
+                        // save the page under id
+                
+                        pagesave(pg, id, pagedir);
+                    }
                     id++;
                 }else{
                     
