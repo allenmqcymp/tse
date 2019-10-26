@@ -1,11 +1,11 @@
-/* crawler6.c ---
- * Author: Allen Ma, Stjepan Vrbic
+/* crawler.c ---
+ * 
+ * 
+ * Author: Allen Ma, Stjepan Vrbic, Joe Signorelli
  * Created: Thu Oct 17 13:02:37 2019 (-0400)
  * Version: 
  * 
  * Description: 
- * Crawl all pages reachable from seedurl, following links to a maximum depth of maxdepth
- * all webpages crawled are internal URL
  * 
  */
 
@@ -18,14 +18,22 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/stat.h>
-#include <assert.h>
 
 #include "webpage.h"
 #include "queue.h"
 #include "hash.h"
 
+bool url_search(void *page_url, const void *search_url) {
+	char *p_url = (char *) page_url;
+	char *s_url = (char *) search_url;
+	if (strcmp(p_url, s_url) == 0) {
+		return true;
+	}
+	return false;
+}
 
 /*
+ *
  * This function saves a fetched page in directory dirname with filename designated by id.
  * The content of the file named id should consist of four elements:
  * - the URL that the page was fetched from on one line
@@ -48,9 +56,6 @@ int32_t pagesave(webpage_t *pagep, int id, char *dirname) {
 		strcpy(new_dirname, dirname);
 	}
 
-	printf("got dirname as %s\n", dirname);
-	printf("got new dirname as %s\n", new_dirname);
-
     // get the html from the webpage
     char *html = webpage_getHTML(pagep);
     int html_len = webpage_getHTMLlen(pagep);
@@ -66,9 +71,9 @@ int32_t pagesave(webpage_t *pagep, int id, char *dirname) {
 	DIR* dir = opendir(new_dirname);
 	if (ENOENT == errno){
 		//directory does not exist
-		closedir(dir);
 		mkdir(new_dirname, 0700);
 	}
+	closedir(dir);
 
 	// check if it's possible to write to the directory
 	if (access(new_dirname, W_OK) != 0) {
@@ -94,20 +99,10 @@ int32_t pagesave(webpage_t *pagep, int id, char *dirname) {
     return 0;
 }
 
-/*
- * Search function for hashtable - checks if urls are the same
- */
-bool url_search(void *page_url, const void *search_url) {
-	char *p_url = (char *) page_url;
-	char *s_url = (char *) search_url;
-	if (strcmp(p_url, s_url) == 0) {
-		return true;
-	}
-	return false;
-}
 
 int main(int argc, char * argv[]) {
-    if (argc < 4) {
+
+	if (argc < 4) {
         printf("Usage: ./crawler6 <seedurl> <pagedir> <maxdepth>\n");
         exit(EXIT_FAILURE);
     }
@@ -115,7 +110,7 @@ int main(int argc, char * argv[]) {
     char *seed_url = argv[1];
     char *pagedir = argv[2];
     int maxdepth = atoi(argv[3]);
-
+	webpage_t *seed_page = webpage_new(seed_url, 0, NULL);
     // check that pagedir is a valid directory
     struct stat sb;
     if (stat(pagedir, &sb) != 0 || !S_ISDIR(sb.st_mode)) {
@@ -123,57 +118,76 @@ int main(int argc, char * argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    printf("seed_url: %s\n", seed_url);
-    printf("pagedir: %s\n", pagedir);
-    printf("maxdepth: %d\n", maxdepth);
-
-    assert(maxdepth > 0);
-
-	webpage_t *seed_page = webpage_new(seed_url, 0, NULL);
 	if (seed_page == NULL) {
-		printf("webpage at seed_url %s is null\n", seed_url);
+		printf("seed page is null\n");
 		exit(EXIT_FAILURE);
 	}
 
+	if(!webpage_fetch(seed_page)) {
+		printf("failed to fetch html for page\n");
+		exit(EXIT_FAILURE);
+	}
+
+	// scanned the fetched html for urls and print whether the url is internal or not
+	int pos = 0;
+	queue_t *url_queue = qopen();
+
+    int id = 1;
+
+	//save the seed page page
+	int32_t res = pagesave(seed_page, id, "../pages/");
+	if (res != 0){
+		printf("failed to save page");
+	}else{
+        id++;
+    }
+
 	// make a hashtable of visited webpages
-	hashtable_t *url_hashtable = hopen(100);
-    queue_t *url_queue = qopen();
-    
-    // add the seed_url to the hashtable, and add the seed_url webpage to the queue
+	hashtable_t *url_hashtable = hopen(1000);
+
+
+    //put the seed page into the hash and the queue
     qput(url_queue, seed_page);
     hput(url_hashtable, seed_url, seed_url, sizeof(seed_url));
 
-    webpage_t *q_page;
-    int id = 1;
-    while ((q_page = qget(url_queue)) != NULL) {
-        printf("url is %s\n", webpage_getURL(q_page));
+    webpage_t *q;
+    while ((q = (webpage_t *)qget(url_queue)) != NULL){
+
         int pos = 0;
         char *q_url = NULL;
-        while ((pos = webpage_getNextURL(q_page, pos, &q_url)) > 0) {
-            // get the depth of the current webpage
-            int curdepth = webpage_getDepth(q_page);
-
-            if (curdepth >= maxdepth) {
-                continue;
+        while ((pos = webpage_getNextURL(q, pos, &q_url)) > 0) {
+            
+            int depth = webpage_getDepth(q);
+            if (depth > maxdepth){
+                break;
             }
-
-            if (IsInternalURL(q_url)) {
+            
+            if (IsInternalURL(q_url)){
                 // check if the url is in the hashtable
                 if (hsearch(url_hashtable, &url_search, q_url, sizeof(q_url)) == NULL) {
                     // add the url to the hashtable
+                    
                     hput(url_hashtable, q_url, q_url, sizeof(q_url));
                     // create a new webpage
-                    webpage_t *pg = webpage_new(q_url, curdepth + 1, NULL);
+                    webpage_t *pg = webpage_new(q_url, depth + 1, NULL);
+                   
                     // place it in the queue
+                    
                     qput(url_queue, pg);
                     // save the page under id
+                    
                     pagesave(pg, id, pagedir);
+                    
                     id++;
+                }else{
+                    
+                    free(q_url);
                 }
             }
         }
+        
+        free(q_url);
     }
-
     // free the seed page
 	webpage_delete(seed_page);
 	// close the queue
@@ -181,7 +195,5 @@ int main(int argc, char * argv[]) {
 	// close the hashtable
 	hclose(url_hashtable);
 
-    exit(EXIT_SUCCESS);
+	exit(EXIT_SUCCESS);
 }
-
-
