@@ -25,9 +25,11 @@ int main(void) {
         printf("failed to fetch webpage\n");
         exit(EXIT_FAILURE);
     }
-    printf("url is %s\n", webpage_getURL(test_pg));
-    printf("depth is %d\n", webpage_getDepth(test_pg));
-	printf("html is %s\n", webpage_getHTML(test_pg));
+    // save the webpage to another file
+    pagesave(test_pg, 2, "../pages/");
+    printf("html in test pg is %s\n", webpage_getHTML(test_pg));
+    // verify that the two files are the same
+    system("diff ../pages/1 ../pages/2");
 	webpage_delete(test_pg);
     exit(EXIT_SUCCESS);
 }

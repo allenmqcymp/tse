@@ -14,24 +14,81 @@
 #include <stdlib.h>
 #include <string.h>
 #include <inttypes.h>
-#include <unistd.h>
-#include <webpage.h>
+#include <dirent.h>
 #include <errno.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+
+#include "webpage.h"
 
 /*
- * pagesave -- save the page in filename id in directory dirnm
  *
- * returns: 0 for success; nonzero otherwise
- *
- * The suggested format for the file is:
- *   <url>
- *   <depth>
- *   <html-length>
- *   <html>
- */
-int32_t pagesave(webpage_t *pagep, int id, char *dirnm) {
+ * This function saves a fetched page in directory dirname with filename designated by id.
+ * The content of the file named id should consist of four elements:
+ * - the URL that the page was fetched from on one line
+ * - the depth assigned to the webpage
+ * - the length of the html associated with the page, on one line
+ * - the HTML associated with the page
+*/ 
+int32_t pagesave(webpage_t *pagep, int id, char *dirname) {
+
+	int max_id_len = 32;
+
+    // strip off the trailing slash of dirname, if it exists
+    char *lastchar =  &dirname[strlen(dirname) - 1];
+	char *new_dirname = malloc(sizeof(char) * strlen(dirname));
+    if (strcmp("/", lastchar) == 0) {
+        strcpy(new_dirname, dirname);
+		new_dirname[strlen(new_dirname)-1] = 0;
+    }
+	else {
+		strcpy(new_dirname, dirname);
+	}
+
+    // get the html from the webpage
+    char *html = webpage_getHTML(pagep);
+    int html_len = webpage_getHTMLlen(pagep);
+    // get the url from the webpage
+    char *url = webpage_getURL(pagep);
+    // get the depth from the webpage
+    int depth = webpage_getDepth(pagep);
+
+    char *fname = malloc(sizeof(char) * strlen(new_dirname) + sizeof(char) * max_id_len);
+    sprintf(fname, "%s/%d", new_dirname, id);
+
+	//check if directory exists, if not, create it
+	DIR* dir = opendir(new_dirname);
+	if (ENOENT == errno){
+		//directory does not exist
+		mkdir(new_dirname, 0700);
+	}
+	closedir(dir);
+
+	// check if it's possible to write to the directory
+	if (access(new_dirname, W_OK) != 0) {
+		printf("cannot access %s\n", new_dirname);
+		chmod(new_dirname, W_OK);
+	}
+
+	//make the file and check if everything went right
+    FILE *f = fopen(fname, "w");
+    if (f == NULL) {
+        printf("failed to open file %s\n", fname);
+		printf("Error %d \n", errno);
+        return -1;
+    }
+
+    fprintf(f, "%s\n", url);
+    fprintf(f, "%d\n", depth);
+    fprintf(f, "%d\n", html_len);
+    fprintf(f, "%s\n", html);
+    fclose(f);
+	free(new_dirname);
+	free(fname);
     return 0;
 }
+
 
 /* 
  * pageload -- loads the numbered filename <id> in direcory <dirnm>
