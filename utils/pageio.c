@@ -195,7 +195,6 @@ webpage_t *pageload(int id, char *dirnm) {
             i++;
         }
     }
-    html_buf[buf_idx] = '\0';
 
     // construct a new webpage
     webpage_t *pg = webpage_new(url_buf, depth, html_buf);
