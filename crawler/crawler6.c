@@ -110,7 +110,7 @@ int main(int argc, char * argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    char *seed_url = malloc(sizeof(char) * strlen(argv[1]) + 1);
+    char *seed_url = malloc(sizeof(char) * strlen(argv[1]));
     strcpy(seed_url, argv[1]); 
     char *pagedir = argv[2];
     int maxdepth = atoi(argv[3]);
@@ -198,9 +198,11 @@ int main(int argc, char * argv[]) {
             }
             pos = webpage_getNextURL(q, pos, &q_url);
         }
-        webpage_delete(q);
+        
         free(q_url);
     }
+    // free the seed page
+	webpage_delete(seed_page);
 	// close the queue
 	qclose(url_queue);
 	// close the hashtable
