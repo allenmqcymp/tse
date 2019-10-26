@@ -49,8 +49,8 @@ int main(void) {
 
 	// make a hashtable of visited webpages
 	hashtable_t *url_hashtable = hopen(100);
-
-	while ((pos = webpage_getNextURL(page, pos, &url)) > 0) {
+	pos = webpage_getNextURL(page, pos, &url);
+	while (pos > 0) {
 		// for each internal url, put it in a queue
 		if (IsInternalURL(url)) {
 			// check if the url is in the hashtable
@@ -60,15 +60,17 @@ int main(void) {
 				hput(url_hashtable, url, url, sizeof(url));
 				// add the webpage to the queue
 				// create a new webpage
-				webpage_t *pg = webpage_new(url, depth + 1, NULL);
+				webpage_t *pg = webpage_new(url, depth, NULL);
 				// place it in the queue
 				qput(url_queue, pg);
+			}else{ // if a website is already in the hash table, free the url because it won't be freed later
+				free(url);
 			}
 		}
+		pos = webpage_getNextURL(page, pos, &url);
 	}
 	free(url);
-
-		
+	
 	webpage_t *pg = (webpage_t *) qget(url_queue);
 	// check that there are no internal urls in the queue
 	while (pg != NULL) {
@@ -86,7 +88,7 @@ int main(void) {
 	webpage_delete(page);
 	// delete the webpage ptr
 	// close the queue
-	qapply(url_queue, free);
+	qapply(url_queue, webpage_delete);
 	qclose(url_queue);
 	// close the hashtable
 	happly(url_hashtable, free);

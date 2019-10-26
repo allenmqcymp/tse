@@ -123,16 +123,16 @@ int main(void) {
 	char *url = NULL;
 	queue_t *url_queue = qopen();
 
+	//save the page
+	int32_t res = pagesave(page, 1, "../pages/");
+	if (res != 0){
+		printf("failed to save page");
+	}
+
 	// make a hashtable of visited webpages
 	hashtable_t *url_hashtable = hopen(100);
-
-	// save the page
-    int32_t res = pagesave(page, 1, "../pages/");
-    if (res == -1) {
-        printf("failed to save page\n");
-    }
-
-	while ((pos = webpage_getNextURL(page, pos, &url)) > 0) {
+	pos = webpage_getNextURL(page, pos, &url);
+	while (pos > 0) {
 		// for each internal url, put it in a queue
 		if (IsInternalURL(url)) {
 			// check if the url is in the hashtable
@@ -142,15 +142,17 @@ int main(void) {
 				hput(url_hashtable, url, url, sizeof(url));
 				// add the webpage to the queue
 				// create a new webpage
-				webpage_t *pg = webpage_new(url, depth + 1, NULL);
+				webpage_t *pg = webpage_new(url, depth, NULL);
 				// place it in the queue
 				qput(url_queue, pg);
+			}else{ // if a website is already in the hash table, free the url because it won't be freed later
+				free(url);
 			}
 		}
+		pos = webpage_getNextURL(page, pos, &url);
 	}
-	url = NULL;
-
-		
+	free(url);
+	
 	webpage_t *pg = (webpage_t *) qget(url_queue);
 	// check that there are no internal urls in the queue
 	while (pg != NULL) {
@@ -166,10 +168,13 @@ int main(void) {
 	}
 	// free the seed page
 	webpage_delete(page);
-	// close the hashtable
-	hclose(url_hashtable);
+	// delete the webpage ptr
 	// close the queue
+	qapply(url_queue, webpage_delete);
 	qclose(url_queue);
+	// close the hashtable
+	happly(url_hashtable, free);
+	hclose(url_hashtable);
 
 	exit(EXIT_SUCCESS);
 }
