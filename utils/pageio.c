@@ -197,6 +197,8 @@ webpage_t *pageload(int id, char *dirnm) {
     }
     html_buf[buf_idx] = '\0';
 
+    printf("inside pageio, html_buf is %s\n", html_buf);
+
     // construct a new webpage
     webpage_t *pg = webpage_new(url_buf, depth, html_buf);
 	free(url_buf);
