@@ -67,9 +67,7 @@ int main(void) {
 		}
 	}
 	free(url);
-	url = NULL;
 
-		
 	webpage_t *pg = (webpage_t *) qget(url_queue);
 	// check that there are no internal urls in the queue
 	while (pg != NULL) {
@@ -85,9 +83,12 @@ int main(void) {
 	}
 	// free the seed page
 	webpage_delete(page);
+	// delete the webpage ptr
 	// close the queue
+	qapply(url_queue, free);
 	qclose(url_queue);
 	// close the hashtable
+	happly(url_hashtable, free);
 	hclose(url_hashtable);
 
 	exit(EXIT_SUCCESS);
