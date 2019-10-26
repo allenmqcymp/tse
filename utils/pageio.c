@@ -37,7 +37,7 @@ int32_t pagesave(webpage_t *pagep, int id, char *dirname) {
 
     // strip off the trailing slash of dirname, if it exists
     char *lastchar =  &dirname[strlen(dirname) - 1];
-	char *new_dirname = malloc(sizeof(char) * strlen(dirname));
+	char *new_dirname = malloc(sizeof(char) * strlen(dirname) + 1);
     if (strcmp("/", lastchar) == 0) {
         strcpy(new_dirname, dirname);
 		new_dirname[strlen(new_dirname)-1] = 0;
@@ -195,7 +195,7 @@ webpage_t *pageload(int id, char *dirnm) {
             i++;
         }
     }
-
+    html_buf[buf_idx] = '\0';
     // construct a new webpage
     webpage_t *pg = webpage_new(url_buf, depth, html_buf);
 	free(url_buf);
