@@ -22,4 +22,4 @@ crawler6: crawler6.c
 clean:
 	rm -rf *.o
 	rm crawler crawler3 crawler5 crawler6
-
+	rm -r *.dSYM
