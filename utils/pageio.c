@@ -174,6 +174,7 @@ webpage_t *pageload(int id, char *dirnm) {
         return NULL;
     }
     while ((c = fgetc(f)) != EOF) {
+        printf("i is %d\n", i);
         if (feof(f)) {
             break;
         }
