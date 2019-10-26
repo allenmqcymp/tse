@@ -75,15 +75,6 @@ int32_t pagesave(webpage_t *pagep, int id, char *dirname) {
     printf("inpagesave: new_dirname is %s\n", new_dirname);
     
 
-<<<<<<< HEAD
-	//check if directory exists, if not, create it
-	DIR* dir = opendir(new_dirname);
-	if (ENOENT == errno){
-		//directory does not exist
-		mkdir(new_dirname, 0700);
-	}
-	closedir(dir);
-=======
 	// check that new_dirname is a valid directory
     struct stat sb;
     if (stat(new_dirname, &sb) != 0 || !S_ISDIR(sb.st_mode)) {
@@ -92,7 +83,6 @@ int32_t pagesave(webpage_t *pagep, int id, char *dirname) {
     }
     
     printf("in pagesave, fname is %s\n", fname);
->>>>>>> eb6d32c5d31b06b2f464716cc33af85fd0d88809
 
 	// check if it's possible to write to the directory
 	if (access(new_dirname, W_OK) != 0) {
@@ -214,7 +204,7 @@ int main(int argc, char * argv[]) {
                     free(q_url);
                 }
             }
-            pos = webpage_getNextURL(q_page, pos, &q_url);
+            pos = webpage_getNextURL(q, pos, &q_url);
         }
         
         free(q_url);
