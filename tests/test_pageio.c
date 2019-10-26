@@ -27,6 +27,7 @@ int main(void) {
     }
     printf("url is %s\n", webpage_getURL(test_pg));
     printf("depth is %d\n", webpage_getDepth(test_pg));
-    printf("test pageio finished.\n");
+	printf("html is %s\n", webpage_getHTML(test_pg));
+	webpage_delete(test_pg);
     exit(EXIT_SUCCESS);
 }
