@@ -179,6 +179,7 @@ webpage_t *pageload(int id, char *dirnm) {
         }
         if (i >= skip_count_html) {
             // check if the buffer is full, if so, expand it
+            printf("the buffer idx is %d\n", buf_idx);
             if (buf_idx >= sz - 1) {
                 sz = sz + 32;
                 void *try_ptr = realloc(html_buf, sz);
