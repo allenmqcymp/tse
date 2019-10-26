@@ -82,7 +82,7 @@ int32_t pagesave(webpage_t *pagep, int id, char *dirname) {
     fprintf(f, "%s\n", url);
     fprintf(f, "%d\n", depth);
     fprintf(f, "%d\n", html_len);
-    fprintf(f, "%s\n", html);
+    fprintf(f, "%s", html);
     fclose(f);
 	free(new_dirname);
 	free(fname);
