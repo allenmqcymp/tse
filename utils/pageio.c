@@ -81,23 +81,23 @@ webpage_t *pageload(int id, char *dirnm) {
     printf("fname is %s\n", fname);
     free(fname);
 
-    // read in the url
-    char url_buf[256];
-    if (fgets(url_buf, sizeof(url_buf), f) == NULL) {
-        printf("failed to read url\n");
-        printf("error no %s\n", strerror(errno));
-        return NULL;
-    }
+    // // read in the url
+    // char url_buf[256];
+    // if (fgets(url_buf, sizeof(url_buf), f) == NULL) {
+    //     printf("failed to read url\n");
+    //     printf("error no %s\n", strerror(errno));
+    //     return NULL;
+    // }
     
-    // read in the depth, and convert it to an integer
-    char depth_buf[128];
-    int depth;
-    if ((fgets(depth_buf, sizeof(depth_buf), f) == NULL)) {
-        printf("failed to read depth\n");
-        printf("error no %s\n", strerror(errno));
-        return NULL;
-    }
-    sscanf(depth_buf, "%d", &depth);
+    // // read in the depth, and convert it to an integer
+    // char depth_buf[128];
+    // int depth;
+    // if ((fgets(depth_buf, sizeof(depth_buf), f) == NULL)) {
+    //     printf("failed to read depth\n");
+    //     printf("error no %s\n", strerror(errno));
+    //     return NULL;
+    // }
+    // sscanf(depth_buf, "%d", &depth);
 
     // read in the html
 
@@ -137,7 +137,7 @@ webpage_t *pageload(int id, char *dirnm) {
     // html_buf[buf_idx] = '\0';
 
     // construct a new webpage
-    webpage_t *pg = webpage_new(url_buf, depth, NULL);
+    webpage_t *pg = webpage_new("always the same", 0, NULL);
     fclose(f);
     return pg;
 }
