@@ -164,10 +164,10 @@ int main(int argc, char * argv[]) {
             
             if (IsInternalURL(q_url)){
                 // check if the url is in the hashtable
-                if (hsearch(url_hashtable, &url_search, q_url, sizeof(q_url)) == NULL) {
+                if (hsearch(url_hashtable, &url_search, q_url, strlen(q_url)) == NULL) {
                     // add the url to the hashtable
                     
-                    hput(url_hashtable, q_url, q_url, sizeof(q_url));
+                    hput(url_hashtable, q_url, q_url, sizeof(char) * strlen(q_url));
                     // create a new webpage
                     webpage_t *pg = webpage_new(q_url, depth + 1, NULL);
                     webpage_fetch(pg);
