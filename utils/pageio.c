@@ -1,4 +1,3 @@
-
 /* 
  * pageio.c --- Implements the functions specified in pageio.h
  * 
@@ -43,14 +42,12 @@ int32_t pagesave(webpage_t *pagep, int id, char *dirnm) {
  */
 webpage_t *pageload(int id, char *dirnm) {
 
-    printf("hi this is pageload function!!!!\n");
-
     // this means that the maximum id can have 32 digits
     int max_id_len = 32;
 
     // strip off the trailing slash of dirname, if it exists
     char *lastchar =  &dirnm[strlen(dirnm) - 1];
-	char *new_dirname = malloc(sizeof(char) * strlen(dirnm));
+	char *new_dirname = malloc(sizeof(char) * strlen(dirnm) + 1);
     if (strcmp("/", lastchar) == 0) {
         strcpy(new_dirname, dirnm);
 		new_dirname[strlen(new_dirname)-1] = 0;
@@ -78,67 +75,74 @@ webpage_t *pageload(int id, char *dirnm) {
         return NULL;
     }
 
-    printf("fname is %s\n", fname);
     free(fname);
     free(new_dirname);
 
-    // // read in the url
-    // char url_buf[256];
-    // if (fgets(url_buf, sizeof(url_buf), f) == NULL) {
-    //     printf("failed to read url\n");
-    //     printf("error no %s\n", strerror(errno));
-    //     return NULL;
-    // }
-    
-    // // read in the depth, and convert it to an integer
-    // char depth_buf[128];
-    // int depth;
-    // if ((fgets(depth_buf, sizeof(depth_buf), f) == NULL)) {
-    //     printf("failed to read depth\n");
-    //     printf("error no %s\n", strerror(errno));
-    //     return NULL;
-    // }
-    // sscanf(depth_buf, "%d", &depth);
-
+	// read in the url
+	char url_s[256];
+	if (fgets(url_s, sizeof(url_s), f) == NULL) {
+	    printf("failed to read url\n");
+	    printf("error no %s\n", strerror(errno));
+	    return NULL;
+	}
+	char *url_buf = malloc(sizeof(url_s));
+	sscanf(url_s, "%s", url_buf);
+	
+	
+	// read in the depth, and convert it to an integer
+	char depth_buf[128];
+	int depth;
+	if ((fgets(depth_buf, sizeof(depth_buf), f) == NULL)) {
+	    printf("failed to read depth\n");
+	    printf("error no %s\n", strerror(errno));
+	    return NULL;
+	}
+	sscanf(depth_buf, "%d", &depth);
+	
     // read in the html
 
-    // // first read in the 3 lines and discard them
-    // int skip_count_html = 3;
-    // int sz = 32;
-    // // now read in the rest of the html
-    // char *html_buf = malloc(sizeof(sz));
-    // char c;
-    // i = 0;
-    // int buf_idx = 0;
-    // if (html_buf == NULL) {
-    //     printf("failed to allocate memory to store html\n");
-    //     return NULL;
-    // }
-    // while ((c = fgetc(f)) != EOF) {
-    //     if (feof(f)) {
-    //         break;
-    //     }
-    //     if (i >= skip_count_html) {
-    //         // check if the buffer is full, if so, expand it
-    //         if (buf_idx + 1 >= sz) {
-    //             sz = sz + 32;
-    //             html_buf = realloc(html_buf, sz);
-    //             if (html_buf == NULL) {
-    //                 printf("out of memory error\n");
-    //                 return NULL;
-    //             }
-    //         }
-    //         // read the line into the buffer
-    //         html_buf[buf_idx++] = c;
-    //     }
-    //     if (strcmp(&c, "\n") == 0) {
-    //         i++;
-    //     }
-    // }
-    // html_buf[buf_idx] = '\0';
+	// position stream pointer to the start of the file
+	fseek(f, 0, SEEK_SET);
+    // first read in the 3 lines and discard them
+    int skip_count_html = 3;
+    int sz = 32;
+    // now read in the rest of the html
+	// note that a char is 1 byte
+    char *html_buf = malloc(sz);
+    char c;
+    int i = 0;
+    int buf_idx = 0;
+    if (html_buf == NULL) {
+        printf("failed to allocate memory to store html\n");
+        return NULL;
+    }
+    while ((c = fgetc(f)) != EOF) {
+        if (feof(f)) {
+            break;
+        }
+        if (i >= skip_count_html) {
+            // check if the buffer is full, if so, expand it
+            if (buf_idx >= sz - 1) {
+                sz = sz + 32;
+                void *try_ptr = realloc(html_buf, sz);
+				if (try_ptr == NULL) {
+					printf("realloc failed\n");
+					return NULL;
+				}
+				html_buf = try_ptr;
+            }
+            // read the line into the buffer
+            html_buf[buf_idx++] = c;
+        }
+        if (strcmp(&c, "\n") == 0) {
+            i++;
+        }
+    }
+    html_buf[buf_idx] = '\0';
 
     // construct a new webpage
-    webpage_t *pg = webpage_new("always the same", 0, NULL);
+    webpage_t *pg = webpage_new(url_buf, depth, html_buf);
+	free(url_buf);
     fclose(f);
     return pg;
 }
