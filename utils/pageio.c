@@ -80,6 +80,7 @@ webpage_t *pageload(int id, char *dirnm) {
 
     printf("fname is %s\n", fname);
     free(fname);
+    free(new_dirname);
 
     // // read in the url
     // char url_buf[256];
