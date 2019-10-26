@@ -53,7 +53,7 @@ webpage_t *pageload(int id, char *dirnm) {
 	char *new_dirname = malloc(sizeof(char) * strlen(dirnm));
     if (strcmp("/", lastchar) == 0) {
         strcpy(new_dirname, dirnm);
-		new_dirname[strlen(new_dirname)-1] = '\0';
+		new_dirname[strlen(new_dirname)-1] = 0;
     }
 	else {
 		strcpy(new_dirname, dirnm);
