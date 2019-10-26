@@ -82,7 +82,7 @@ int32_t pagesave(webpage_t *pagep, int id, char *dirname) {
     fprintf(f, "%s\n", url);
     fprintf(f, "%d\n", depth);
     fprintf(f, "%d\n", html_len);
-    fprintf(f, "%s\n", html);
+    fprintf(f, "%s", html);
     fclose(f);
 	free(new_dirname);
 	free(fname);
@@ -195,7 +195,6 @@ webpage_t *pageload(int id, char *dirnm) {
             i++;
         }
     }
-    html_buf[buf_idx] = '\0';
 
     // construct a new webpage
     webpage_t *pg = webpage_new(url_buf, depth, html_buf);

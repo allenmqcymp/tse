@@ -43,13 +43,11 @@ bool url_search(void *page_url, const void *search_url) {
 */ 
 int32_t pagesave(webpage_t *pagep, int id, char *dirname) {
 
-    //pagep = webpage_new()
-
 	int max_id_len = 32;
 
     // strip off the trailing slash of dirname, if it exists
     char *lastchar =  &dirname[strlen(dirname) - 1];
-	char *new_dirname = malloc(sizeof(char) * strlen(dirname) + 1);
+	char *new_dirname = malloc(sizeof(char) * strlen(dirname));
     if (strcmp("/", lastchar) == 0) {
         strcpy(new_dirname, dirname);
 		new_dirname[strlen(new_dirname)-1] = 0;
@@ -66,7 +64,7 @@ int32_t pagesave(webpage_t *pagep, int id, char *dirname) {
     // get the depth from the webpage
     int depth = webpage_getDepth(pagep);
 
-    char *fname = malloc(sizeof(char) * strlen(new_dirname) + sizeof(char) * max_id_len + 1);
+    char *fname = malloc(sizeof(char) * strlen(new_dirname) + sizeof(char) * max_id_len);
     sprintf(fname, "%s/%d", new_dirname, id);
 
 	//check if directory exists, if not, create it
@@ -90,10 +88,11 @@ int32_t pagesave(webpage_t *pagep, int id, char *dirname) {
 		printf("Error %d \n", errno);
         return -1;
     }
+
     fprintf(f, "%s\n", url);
     fprintf(f, "%d\n", depth);
     fprintf(f, "%d\n", html_len);
-    fprintf(f, "%s\n", html);
+    fprintf(f, "%s", html);
     fclose(f);
 	free(new_dirname);
 	free(fname);

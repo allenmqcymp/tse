@@ -56,9 +56,6 @@ int32_t pagesave(webpage_t *pagep, int id, char *dirname) {
 		strcpy(new_dirname, dirname);
 	}
 
-	printf("got dirname as %s\n", dirname);
-	printf("got new dirname as %s\n", new_dirname);
-
     // get the html from the webpage
     char *html = webpage_getHTML(pagep);
     int html_len = webpage_getHTMLlen(pagep);
@@ -95,7 +92,7 @@ int32_t pagesave(webpage_t *pagep, int id, char *dirname) {
     fprintf(f, "%s\n", url);
     fprintf(f, "%d\n", depth);
     fprintf(f, "%d\n", html_len);
-    fprintf(f, "%s\n", html);
+    fprintf(f, "%s", html);
     fclose(f);
 	free(new_dirname);
 	free(fname);
