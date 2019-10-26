@@ -35,6 +35,8 @@
 */ 
 int32_t pagesave(webpage_t *pagep, int id, char *dirname) {
 
+	printf("in pagesave\n");
+
 	int max_id_len = 32;
 
     // strip off the trailing slash of dirname, if it exists
@@ -48,9 +50,6 @@ int32_t pagesave(webpage_t *pagep, int id, char *dirname) {
 		strcpy(new_dirname, dirname);
 	}
 
-	printf("got dirname as %s\n", dirname);
-	printf("got new dirname as %s\n", new_dirname);
-
     // get the html from the webpage
     char *html = webpage_getHTML(pagep);
     int html_len = webpage_getHTMLlen(pagep);
@@ -58,17 +57,24 @@ int32_t pagesave(webpage_t *pagep, int id, char *dirname) {
     char *url = webpage_getURL(pagep);
     // get the depth from the webpage
     int depth = webpage_getDepth(pagep);
+    
+    printf("in pagesave url is %s\n", url);
+    printf("in pagesave id is %d\n", id);
 
     char *fname = malloc(sizeof(char) * strlen(new_dirname) + sizeof(char) * max_id_len);
     sprintf(fname, "%s/%d", new_dirname, id);
+    
+    printf("inpagesave: new_dirname is %s\n", new_dirname);
+    
 
-	//check if directory exists, if not, create it
-	DIR* dir = opendir(new_dirname);
-	if (ENOENT == errno){
-		//directory does not exist
-		closedir(dir);
-		mkdir(new_dirname, 0700);
-	}
+	// check that new_dirname is a valid directory
+    struct stat sb;
+    if (stat(new_dirname, &sb) != 0 || !S_ISDIR(sb.st_mode)) {
+        printf("%s is not a valid directory, so making it\n", new_dirname);
+        mkdir(new_dirname, 0700);
+    }
+    
+    printf("in pagesave, fname is %s\n", fname);
 
 	// check if it's possible to write to the directory
 	if (access(new_dirname, W_OK) != 0) {
@@ -83,6 +89,8 @@ int32_t pagesave(webpage_t *pagep, int id, char *dirname) {
 		printf("Error %d \n", errno);
         return -1;
     }
+    
+    printf("in pagesave still\n");
 
     fprintf(f, "%s\n", url);
     fprintf(f, "%d\n", depth);
@@ -91,6 +99,7 @@ int32_t pagesave(webpage_t *pagep, int id, char *dirname) {
     fclose(f);
 	free(new_dirname);
 	free(fname);
+	printf("returning out of pagesave\n");
     return 0;
 }
 
@@ -112,15 +121,16 @@ int main(int argc, char * argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    char *seed_url = argv[1];
+    char *seed_url = malloc(sizeof(char) * strlen(argv[1]));
+    strcpy(seed_url, argv[1]); 
     char *pagedir = argv[2];
     int maxdepth = atoi(argv[3]);
 
     // check that pagedir is a valid directory
     struct stat sb;
     if (stat(pagedir, &sb) != 0 || !S_ISDIR(sb.st_mode)) {
-        printf("%s is not a valid directory\n", pagedir);
-        exit(EXIT_FAILURE);
+        printf("%s is not a valid directory, so making it\n", pagedir);
+        mkdir(pagedir, 0700);
     }
 
     printf("seed_url: %s\n", seed_url);
@@ -134,6 +144,11 @@ int main(int argc, char * argv[]) {
 		printf("webpage at seed_url %s is null\n", seed_url);
 		exit(EXIT_FAILURE);
 	}
+	
+	if (!webpage_fetch(seed_page)) {
+		printf("failed to fetch seed page html\n");
+		exit(EXIT_FAILURE);
+	}
 
 	// make a hashtable of visited webpages
 	hashtable_t *url_hashtable = hopen(100);
@@ -142,20 +157,40 @@ int main(int argc, char * argv[]) {
     // add the seed_url to the hashtable, and add the seed_url webpage to the queue
     qput(url_queue, seed_page);
     hput(url_hashtable, seed_url, seed_url, sizeof(seed_url));
+    
+    printf("seed page URL is %s\n", webpage_getURL(seed_page));
 
-    webpage_t *q_page;
+    webpage_t *q_page = (webpage_t *) qget(url_queue);
     int id = 1;
-    while ((q_page = qget(url_queue)) != NULL) {
-        printf("url is %s\n", webpage_getURL(q_page));
-        int pos = 0;
+    
+    bool failed = false;
+    
+    while (q_page != NULL) {
+    
+        printf("dequeued stuff: url is %s\n", webpage_getURL(q_page));
         char *q_url = NULL;
-        while ((pos = webpage_getNextURL(q_page, pos, &q_url)) > 0) {
+		if (!webpage_fetch(q_page)) {
+			printf("failed to fetch page html\n");
+			failed = true;
+			break;
+		}
+		                    
+		                    
+        // save the page under id
+        pagesave(q_page, id, pagedir);
+        id++;
+                    
+		int pos = webpage_getNextURL(q_page, pos, &q_url);
+        while (pos > 0) {
+        	printf("pos is %d\n", pos);
             // get the depth of the current webpage
             int curdepth = webpage_getDepth(q_page);
 
             if (curdepth >= maxdepth) {
                 continue;
             }
+            
+            printf("q_url %s\n", q_url);
 
             if (IsInternalURL(q_url)) {
                 // check if the url is in the hashtable
@@ -165,15 +200,20 @@ int main(int argc, char * argv[]) {
                     // create a new webpage
                     webpage_t *pg = webpage_new(q_url, curdepth + 1, NULL);
                     // place it in the queue
+                    printf("adding q_url %s to the queue\n", q_url);
                     qput(url_queue, pg);
-                    // save the page under id
-                    pagesave(pg, id, pagedir);
-                    id++;
                 }
             }
+            pos = webpage_getNextURL(q_page, pos, &q_url);
         }
+        printf("getting another page from the queue\n");
+        free(q_url);
+        q_page = (webpage_t *) qget(url_queue);
+        printf("qpage is %s\n", webpage_getURL(q_page));
     }
+    
 
+    
     // free the seed page
 	webpage_delete(seed_page);
 	// close the queue
@@ -181,7 +221,12 @@ int main(int argc, char * argv[]) {
 	// close the hashtable
 	hclose(url_hashtable);
 
-    exit(EXIT_SUCCESS);
+    if (failed) {
+    	exit(EXIT_FAILURE);
+    }
+    else {
+    	exit(EXIT_SUCCESS);
+    }
 }
 
 
