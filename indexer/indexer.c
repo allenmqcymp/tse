@@ -22,8 +22,16 @@ typedef struct word_count{
     int count;
 }word_count_t;
 
+int sum = 0;
 
-bool word_search(word_count_t *h_word, char *s_word){
+void sum_counts(void *ep){
+    word_count_t *temp = (word_count_t*)ep;
+    sum += temp->count;
+}
+
+bool word_search(void *ep, const void *sp){
+    word_count_t *h_word = (word_count_t*)ep;
+    char *s_word = (char*)sp;
     if (strcmp(h_word->word, s_word) == 0){
         return true;
     }else{
@@ -56,7 +64,7 @@ int main(void){
     char *dir = "../pages/";
     webpage_t *page = pageload(id, dir);
     int pos = 0;
-    char *word;
+    char *word = NULL;
     pos = webpage_getNextWord(page, pos, &word);
 
     //make the file and check if everything went right
@@ -86,14 +94,19 @@ int main(void){
             if ((temp = hsearch(index, &word_search, word, strlen(word))) == NULL){
                 word_count_t *counter = malloc(sizeof(word_count_t));
                 counter->word = word;
-                counter->count = 0;
+                counter->count = 1;
                 hput(index, counter, counter->word, strlen(counter->word));
             }else{
                 temp->count++;
+                free(word);
             }
         }
         pos = webpage_getNextWord(page, pos, &word);
     }
+    happly(index, &sum_counts);
+    printf("the count is: %d", sum);
+    webpage_delete(page);
+    hclose(index);
     fclose(f);
     free(word);
     return (EXIT_SUCCESS);
