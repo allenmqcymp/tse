@@ -20,16 +20,15 @@
 #include <errno.h>
 
 int main(void) {
-    webpage_t *test_pg = pageload(1, "../pages/");
+    webpage_t *test_pg = pageload(42, "../pages/");
     if (test_pg == NULL) {
         printf("failed to fetch webpage\n");
         exit(EXIT_FAILURE);
     }
     // save the webpage to another file
-    pagesave(test_pg, 2, "../pages/");
-    printf("html in test pg is %s\n", webpage_getHTML(test_pg));
+    pagesave(test_pg, 1000, "../pages/");
     // verify that the two files are the same
-    system("diff ../pages/1 ../pages/2");
+    system("diff ../pages/42 ../pages/1000");
 	webpage_delete(test_pg);
     exit(EXIT_SUCCESS);
 }

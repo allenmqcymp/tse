@@ -22,6 +22,9 @@
 
 #include "webpage.h"
 
+// uncomment to print debug messages
+// #define DEBUG 0
+
 /*
  *
  * This function saves a fetched page in directory dirname with filename designated by id.
@@ -126,6 +129,10 @@ webpage_t *pageload(int id, char *dirnm) {
     // open the file, check that it is readable
     FILE *f = fopen(fname, "r");    
 
+    #ifdef DEBUG
+        printf("loading file: %s\n", fname);
+    #endif
+
     if (f == NULL) {
         printf("failed to open file %s\n", fname);
         free(fname);
@@ -135,38 +142,40 @@ webpage_t *pageload(int id, char *dirnm) {
     free(fname);
     free(new_dirname);
 
+
 	// read in the url
-	char url_s[256];
-	if (fgets(url_s, sizeof(url_s), f) == NULL) {
+	char url_s[512];
+	if ((fgets(url_s, sizeof(url_s), f)) == NULL) {
 	    printf("failed to read url\n");
 	    printf("error no %s\n", strerror(errno));
 	    return NULL;
 	}
-	char *url_buf = malloc(sizeof(url_s));
-	sscanf(url_s, "%s", url_buf);
-	
-	
+    url_s[strcspn(url_s, "\n")] = '\0';
+
 	// read in the depth, and convert it to an integer
 	char depth_buf[128];
-	int depth;
-	if ((fgets(depth_buf, sizeof(depth_buf), f) == NULL)) {
+	if (fgets(depth_buf, sizeof(depth_buf), f) == NULL) {
 	    printf("failed to read depth\n");
 	    printf("error no %s\n", strerror(errno));
 	    return NULL;
 	}
-	sscanf(depth_buf, "%d", &depth);
-	
+
+    unsigned long depth = strtoul(depth_buf, NULL, 10);
+
+    char temp_buf[128];
+    // read another line the len of the html - we don't really need it
+    fgets(temp_buf, sizeof(temp_buf), f);
+
+
     // read in the html
 
-	// position stream pointer to the start of the file
-	fseek(f, 0, SEEK_SET);
+	// // position stream pointer to the start of the file
+	// fseek(f, 0, SEEK_SET);
     // first read in the 3 lines and discard them
-    int skip_count_html = 3;
+    int skip_count_html = 0;
     int sz = 32;
-    // now read in the rest of the html
-	// note that a char is 1 byte
     char *html_buf = malloc(sz);
-    char c;
+    int c;
     int i = 0;
     int buf_idx = 0;
     if (html_buf == NULL) {
@@ -177,6 +186,7 @@ webpage_t *pageload(int id, char *dirnm) {
         if (feof(f)) {
             break;
         }
+        char cc = (char) c;
         if (i >= skip_count_html) {
             // check if the buffer is full, if so, expand it
             if (buf_idx >= sz - 1) {
@@ -189,16 +199,20 @@ webpage_t *pageload(int id, char *dirnm) {
 				html_buf = try_ptr;
             }
             // read the line into the buffer
-            html_buf[buf_idx++] = c;
+            html_buf[buf_idx++] = cc;
         }
-        if (strcmp(&c, "\n") == 0) {
+        if (strcmp(&cc, "\n") == 0) {
             i++;
         }
     }
     html_buf[buf_idx] = '\0';
+
+    #ifdef DEBUG 
+        printf("the html associated with the url- %s -is\n%s", url_s, html_buf);
+    #endif
+
     // construct a new webpage
-    webpage_t *pg = webpage_new(url_buf, depth, html_buf);
-	free(url_buf);
+    webpage_t *pg = webpage_new(url_s, depth, html_buf);
     fclose(f);
     return pg;
 }

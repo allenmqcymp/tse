@@ -1,4 +1,4 @@
-/* indexer.c ---
+/* indexer5.c ---
  * 
  * 
  * Author: Stjepan Vrbic, Allen Ma
@@ -16,6 +16,8 @@
 #include "webpage.h"
 #include "queue.h"
 #include "hash.h"
+
+
 
 
 // GLOBAL VARIABLES
@@ -110,9 +112,8 @@ int NormalizeWord(char *word){
 
 // MAIN FUNCTION
 
-int main(void){
-    
-    int id = 1;
+int main(int argc, char *argv[]){
+    int id = atoi(argv[1]);
     char *dir = "../pages/";
     webpage_t *page = pageload(id, dir);
     int pos = 0;

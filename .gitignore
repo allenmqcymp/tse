@@ -23,5 +23,12 @@
 .DS_Store
 
 pages/*
+crawler/crawler
+crawler/crawler3
+crawler/crawler5
+crawler/crawler6
+indexer/indexer
+indexer/indexer4
+indexer/indexer5
 
 

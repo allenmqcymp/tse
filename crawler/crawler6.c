@@ -128,8 +128,6 @@ int main(int argc, char * argv[]) {
 		exit(EXIT_FAILURE);
 	}
 
-	// scanned the fetched html for urls and print whether the url is internal or not
-	int pos = 0;
 	queue_t *url_queue = qopen();
 
     int id = 1;
