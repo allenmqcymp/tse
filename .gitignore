@@ -23,6 +23,7 @@
 .DS_Store
 
 pages/*
+tests/test_pageio
 crawler/crawler
 crawler/crawler3
 crawler/crawler5
