@@ -29,6 +29,7 @@ void sum_counts(void *ep){
     sum += temp->count;
 }
 
+// frees both the word in the word_count_t structure, and frees the word_count_t structure itself
 void free_word(void *ep) {
     word_count_t *temp = (word_count_t *) ep;
     free(temp->word);
