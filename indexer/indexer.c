@@ -29,6 +29,12 @@ void sum_counts(void *ep){
     sum += temp->count;
 }
 
+void free_word(void *ep) {
+    word_count_t *temp = (word_count_t *) ep;
+    free(temp->word);
+    free(temp);
+}
+
 bool word_search(void *ep, const void *sp){
     word_count_t *h_word = (word_count_t*)ep;
     char *s_word = (char*)sp;
@@ -83,10 +89,10 @@ int main(void){
 
         //normalize the word
         res = NormalizeWord(word);
-        //put it in the file
-        fprintf(f, "%s", word);
+
         //if it is a valid word
         if (pos > 0 && res != 0){
+            fprintf(f, "%s", word);
             fprintf(f, "\n");
 
             //put it in the hash table if it is a new word, increment count if it already exists
@@ -104,8 +110,9 @@ int main(void){
         pos = webpage_getNextWord(page, pos, &word);
     }
     happly(index, &sum_counts);
-    printf("the count is: %d", sum);
+    printf("the count is: %d\n", sum);
     webpage_delete(page);
+    happly(index, &free_word);
     hclose(index);
     fclose(f);
     free(word);

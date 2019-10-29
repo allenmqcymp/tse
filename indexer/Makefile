@@ -11,5 +11,5 @@ indexer: indexer.c
 
 clean:
 	rm -rf *.o
-	rm crawler crawler3 crawler5 crawler6
+	rm -rf indexer
 	rm -r *.dSYM
