@@ -115,10 +115,6 @@ int NormalizeWord(char *word){
 int main(int argc, char *argv[]){
     int id = atoi(argv[1]);
     char *dir = "../pages/";
-    webpage_t *page = pageload(id, dir);
-    int pos = 0;
-    char *word = NULL;
-    pos = webpage_getNextWord(page, pos, &word);
 
     //make the file and check if everything went right
     FILE *f = fopen("output_file", "w");
@@ -131,57 +127,66 @@ int main(int argc, char *argv[]){
     //make a hashtable to index the occurences of each word
     hashtable_t *index = hopen(1000);
 
-    int res;
-    while (pos > 0){
+    for (int idx = 1; idx <= id; idx++) {
+        webpage_t *page = pageload(idx, dir);
+        int pos = 0;
+        char *word = NULL;
+        pos = webpage_getNextWord(page, pos, &word);
 
-        //normalize the word
-        res = NormalizeWord(word);
+        int res;
+        while (pos > 0){
 
-        //if it is a valid word
-        if (pos > 0 && res != 0){
-            fprintf(f, "%s", word);
-            fprintf(f, "\n");
+            //normalize the word
+            res = NormalizeWord(word);
 
-            // for the current document, if a new word is encountered
-            // place it in a queue with count 1 and document_t
-            queue_of_documents_t *temp;
-            if ((temp = hsearch(index, &document_queue_search, word, strlen(word))) == NULL){
-                queue_of_documents_t *q_docs = malloc(sizeof(queue_of_documents_t));
-                q_docs->word = word;
-                q_docs->qp = qopen();
-                // put the current id and count 1 in the queue
-                document_t *dp = malloc(sizeof(document_t));
-                dp->id = id;
-                dp->count = 1;
-                qput(q_docs->qp, dp);
-                hput(index, q_docs, word, strlen(word));
-            }
-            else {
-                // find the document entry in the queue - if it's not there, then add a new document_t entry to the queue
-                queue_of_documents_t *q_docs = temp;
-                document_t *temp_doc;
-                if ((temp_doc = qsearch(q_docs->qp, &document_word_search, &id)) == NULL) {
+            //if it is a valid word
+            if (pos > 0 && res != 0){
+                fprintf(f, "%s", word);
+                fprintf(f, "\n");
+
+                // for the current document, if a new word is encountered
+                // place it in a queue with count 1 and document_t
+                queue_of_documents_t *temp;
+                if ((temp = hsearch(index, &document_queue_search, word, strlen(word))) == NULL){
+                    queue_of_documents_t *q_docs = malloc(sizeof(queue_of_documents_t));
+                    q_docs->word = word;
+                    q_docs->qp = qopen();
+                    // put the current id and count 1 in the queue
                     document_t *dp = malloc(sizeof(document_t));
-                    dp->id = id;
+                    dp->id = idx;
                     dp->count = 1;
                     qput(q_docs->qp, dp);
+                    hput(index, q_docs, word, strlen(word));
                 }
                 else {
-                    temp_doc->count++;
+                    // find the document entry in the queue - if it's not there, then add a new document_t entry to the queue
+                    queue_of_documents_t *q_docs = temp;
+                    document_t *temp_doc;
+                    if ((temp_doc = qsearch(q_docs->qp, &document_word_search, &idx)) == NULL) {
+                        document_t *dp = malloc(sizeof(document_t));
+                        dp->id = idx;
+                        dp->count = 1;
+                        qput(q_docs->qp, dp);
+                    }
+                    else {
+                        temp_doc->count++;
+                    }
+                    // free the word because it wasn't added to a queue_of_documents structure
+                    free(word);
                 }
-                // free the word because it wasn't added to a queue_of_documents structure
-                free(word);
             }
+            pos = webpage_getNextWord(page, pos, &word);
         }
-        pos = webpage_getNextWord(page, pos, &word);
+        webpage_delete(page);
+        free(word);
     }
+
     happly(index, &grand_sum);
-    printf("the total counts is %d\n", sum);
-    webpage_delete(page);
+    printf("cumulative sum from id %d to %d is: %d\n", 1, id, sum);
+
     // need to free the queues
     happly(index, &free_queues);
     hclose(index);
     fclose(f);
-    free(word);
     return (EXIT_SUCCESS);
 }
