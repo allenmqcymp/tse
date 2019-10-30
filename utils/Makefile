@@ -2,9 +2,7 @@ CFLAGS=-Wall -pedantic -std=c11 -I. -g
 CC=gcc
 LIBS=-lm
 
-# get all c files whose name starts test. This is used to extract the target name
-#https://stackoverflow.com/questions/13995906/get-filename-without-extension-within-makefile
-OFILES=queue.o hash.o webpage.o pageio.o
+OFILES=queue.o hash.o webpage.o pageio.o indexio.o
 
 all: $(OFILES)
 	ar cr ../lib/libutils.a $(OFILES)
@@ -19,6 +17,9 @@ hash.o: hash.c hash.h queue.h
 	$(CC) $(CFLAGS) -c $<
 
 pageio.o: pageio.c pageio.h webpage.h
+	$(CC) $(CFLAGS) -c $<
+
+indexio.o: indexio.c indexio.h hash.h
 	$(CC) $(CFLAGS) -c $<
 
 clean:

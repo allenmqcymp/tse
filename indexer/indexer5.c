@@ -149,6 +149,7 @@ int main(int argc, char *argv[]){
                 queue_of_documents_t *temp;
                 if ((temp = hsearch(index, &document_queue_search, word, strlen(word))) == NULL){
                     queue_of_documents_t *q_docs = malloc(sizeof(queue_of_documents_t));
+                    // note: do we need to malloc here or can we just assign? - because word gets overwritten??
                     q_docs->word = word;
                     q_docs->qp = qopen();
                     // put the current id and count 1 in the queue
