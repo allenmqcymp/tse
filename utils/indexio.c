@@ -31,50 +31,37 @@ typedef struct document {
     int count;
 } document_t;
 
-void get_word_and_docs(void *ep) {
-    queue_of_documents_t *q_dp = (queue_of_documents_t *) ep;
-    // add the queue to temp_queue
-    qput(temp_queue, q_dp);
+static FILE *f;
+
+//saves a document id and count
+void docsave(void *p){
+    document_t *temp = (document_t *)p;
+    fprintf(f, "%d %d ", temp->id, temp->count);
 }
 
+//saves the word from queue of documents struct and then goes through the queue, saving the documents and the counts
+void wordsave(void *p){
+    queue_of_documents_t *temp = (queue_of_documents_t *)p;
+    fprintf(f, "%s ", temp->word);
+    qapply(temp->qp, &docsave);
+    fprintf(f, "\n");
+}
 
-
-int32_t indexsave(hashtable_t *h_index, char *fname) {
-    FILE *f = fopen(fname, "w");
+int32_t indexsave(hashtable_t *index, char *fname) {
+    f = fopen(fname, "w");
     if (f == NULL) {
-        printf("failed to open file %s\n", f);
+        printf("failed to open file %s\n", fname);
 		printf("Error %d \n", errno);
         return -1;
     }
 
     // check if it's possible to write to the directory
-	if (access(f, W_OK) != 0) {
-		printf("cannot access %s\n", f);
+	if (access(fname, W_OK) != 0) {
+		printf("cannot access %s\n", fname);
 		return -1;
 	}
 
-    // make a temporary queue
-    temp_queue = qopen();
-
-    // for each word
-    happly(h_index, &get_word_and_docs);
-
-    int init_size = 64;
-
-    queue_of_documents_t *q_dp;
-    while ((q_dp = qget(temp_queue)) != NULL) {
-        // get the word from the queue
-        char *word = q_dp->word;
-
-        char *write_buf = malloc(strlen(word) + 1 + init_size);
-        sprintf(write_buf, )
-        document_t *doc_t;
-        // word a word, then a space to the buffer
-        while ((doc_t = qget(q_dp->qp)) != NULL) {
-            //
-        }
-    }
-
+    happly(index, &wordsave);
 
     fclose(f);
 
