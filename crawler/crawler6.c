@@ -132,14 +132,6 @@ int main(int argc, char * argv[]) {
 
     int id = 1;
 
-	//save the seed page page
-	int32_t res = pagesave(seed_page, id, "../pages/");
-	if (res != 0){
-		printf("failed to save page");
-	}else{
-        id++;
-    }
-
 	// make a hashtable of visited webpages
 	hashtable_t *url_hashtable = hopen(1000);
 
