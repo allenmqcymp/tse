@@ -11,14 +11,14 @@
 #include <string.h>
 #include <errno.h>
 #include <ctype.h>
+#include <fcntl.h>
+#include <sys/stat.h>
 
 #include "pageio.h"
 #include "webpage.h"
 #include "queue.h"
 #include "hash.h"
 #include "indexio.h"
-
-
 
 
 // GLOBAL VARIABLES
@@ -117,12 +117,20 @@ int main(int argc, char *argv[]){
     char *dir = argv[1];
     char *indexnm = argv[2];
 
+    // check if the directory exists, if not exit right away
+    // check that pagedir is a valid directory
+    struct stat sb;
+    if (stat(dir, &sb) != 0 || !S_ISDIR(sb.st_mode)) {
+        printf("%s is not a valid directory\n", dir);
+        exit(EXIT_FAILURE);
+    }
+
     //make the file and check if everything went right
     FILE *f = fopen("output_file", "w");
     if (f == NULL) {
         printf("failed to open file %s\n", "output_file");
 		printf("Error %d \n", errno);
-        return -1;
+        exit(EXIT_FAILURE);
     }
 
     //make a hashtable to index the occurences of each word
@@ -130,7 +138,6 @@ int main(int argc, char *argv[]){
     int idx = 1;
     webpage_t *page = pageload(idx, dir);
     while (page != NULL) {
-        printf("index is %d\n", idx);
         int pos = 0;
         char *word = NULL;
         pos = webpage_getNextWord(page, pos, &word);
