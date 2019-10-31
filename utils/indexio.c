@@ -30,26 +30,40 @@ typedef struct document {
     int count;
 } document_t;
 
+static FILE *f;
 
+//saves a document id and count
+void docsave(void *p){
+    document_t *temp = (document_t *)p;
+    fprintf(f, "%d %d ", temp->id, temp->count);
+}
+
+//saves the word from queue of documents struct and then goes through the queue, saving the documents and the counts
+void wordsave(void *p){
+    queue_of_documents_t *temp = (queue_of_documents_t *)p;
+    fprintf(f, "%s ", temp->word);
+    qapply(temp->qp, &docsave);
+    fprintf(f, "\n");
+}
 
 int32_t indexsave(hashtable_t *index, char *fname) {
-    // FILE *f = fopen(fname, "w");
-    // if (f == NULL) {
-    //     printf("failed to open file %s\n", f);
-	// 	printf("Error %d \n", errno);
-    //     return -1;
-    // }
+    f = fopen(fname, "w");
+    if (f == NULL) {
+        printf("failed to open file %s\n", fname);
+		printf("Error %d \n", errno);
+        return -1;
+    }
 
-    // // check if it's possible to write to the directory
-	// if (access(f, W_OK) != 0) {
-	// 	printf("cannot access %s\n", f);
-	// 	return -1
-	// }
+    // check if it's possible to write to the directory
+	if (access(fname, W_OK) != 0) {
+		printf("cannot access %s\n", fname);
+		return -1;
+	}
 
+    happly(index, &wordsave);
 
-    // fclose(f);
+    fclose(f);
 
-    // return 0;
     return 0;
 
 }
