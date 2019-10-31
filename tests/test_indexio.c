@@ -45,10 +45,14 @@ void free_queues(void *ep) {
     free(temp);
 }
 
-int main(void) {
-    printf("helo\n");
-    char *fname = "../pages/tokentest";
+int main(int argc, char *argv[]) {
+    char *fname = "./test_indices/indexer1";
+    printf("running test indexio on %s\n", fname);
     hashtable_t *h = indexload(fname);
+    // save the index using indexsave
+    indexsave(h, "./test_indices/indexer1_saved");
+    // check that he two files are the same
+    system("diff ./test_indices/indexer1 ../test_indices/indexer1_saved");
     // free everything
     happly(h, &free_queues);
     hclose(h);

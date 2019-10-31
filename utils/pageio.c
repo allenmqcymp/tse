@@ -121,8 +121,8 @@ webpage_t *pageload(int id, char *dirnm) {
 
     // check if it's possible to write to the directory
 	if (access(fname, R_OK) != 0) {
-		printf("unable to read from %s\n", fname);
         free(fname);
+        free(new_dirname);
         return NULL;
 	}
 
@@ -136,6 +136,7 @@ webpage_t *pageload(int id, char *dirnm) {
     if (f == NULL) {
         printf("failed to open file %s\n", fname);
         free(fname);
+        free(new_dirname);
         return NULL;
     }
 

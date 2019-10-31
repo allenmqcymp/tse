@@ -130,7 +130,7 @@ int main(int argc, char *argv[]){
     int idx = 1;
     webpage_t *page = pageload(idx, dir);
     while (page != NULL) {
-        
+        printf("index is %d\n", idx);
         int pos = 0;
         char *word = NULL;
         pos = webpage_getNextWord(page, pos, &word);
@@ -184,8 +184,8 @@ int main(int argc, char *argv[]){
         idx++;
         page = pageload(idx, dir);
     }
-
     //save the index
+    printf("saving the index\n");
     indexsave(index, indexnm);
 
     // need to free the queues

@@ -17,7 +17,6 @@
 #include "queue.h"
 
 static hashtable_t *index;
-static queue_t *temp_queue;
 
 // queue of document structure
 typedef struct queue_of_documents {
@@ -72,6 +71,8 @@ int32_t indexsave(hashtable_t *index, char *fname) {
 
 hashtable_t *indexload(char *fname) {
 
+    printf("loading index\n");
+
     // somehow need to get all the words into a queue
     // but I don't want to use a static queue approach
     // is there an alternative
@@ -81,14 +82,17 @@ hashtable_t *indexload(char *fname) {
         printf("indexload: could not open file\n");
     }
 
-    printf("HALLO!\n");
     char line[255];
     const char s[2] = " ";
 
     // instantiate an index hashtable
     index = hopen(1000);
+
+    printf("loading index 2\n");
     
     while(fgets(line, sizeof(line), f) != NULL) {
+
+        printf("loading index -while loop\n");
         
         char *token;
         char *word;
@@ -104,7 +108,6 @@ hashtable_t *indexload(char *fname) {
         // the word is the first token
         token = strtok(line, s);
         word = token;
-        printf( "word is %s\n", word );
 
         // put the word in the hashtable
         queue_of_documents_t *q_docs = malloc(sizeof(queue_of_documents_t));
