@@ -135,34 +135,33 @@ int main(int argc, char * argv[]) {
 	// make a hashtable of visited webpages
 	hashtable_t *url_hashtable = hopen(1000);
 
-
     //put the seed page into the hash and the queue
     qput(url_queue, seed_page);
     hput(url_hashtable, seed_url, seed_url, sizeof(seed_url));
-
+    int depth;
     webpage_t *q;
     while ((q = (webpage_t *)qget(url_queue)) != NULL){
+        depth = webpage_getDepth(q);
         int pos = 0;
         char *q_url = NULL;
         pos = webpage_getNextURL(q, pos, &q_url);
         while (pos > 0) {
-            fflush(stdout);
-            int depth = webpage_getDepth(q);
-            if (depth > maxdepth){
-                break;
-            }
             
             if (IsInternalURL(q_url)){
                 // check if the url is in the hashtable
                 if (hsearch(url_hashtable, &url_search, q_url, strlen(q_url)) == NULL) {
                     // add the url to the hashtable
-                    
                     hput(url_hashtable, q_url, q_url, sizeof(char) * strlen(q_url));
                     // create a new webpage
                     webpage_t *pg = webpage_new(q_url, depth + 1, NULL);
-                    webpage_fetch(pg);
+                    bool real = webpage_fetch(pg);
+                    if (!real){
+                        continue;
+                    }
                     // place it in the queue
-                    
+                    if (depth == maxdepth){
+                        break;
+                    }
                     qput(url_queue, pg);
                     // save the page under id
                     if (webpage_getHTMLlen(pg) != 47){
@@ -174,6 +173,9 @@ int main(int argc, char * argv[]) {
                 }
             }
             pos = webpage_getNextURL(q, pos, &q_url);
+        }
+        if (depth == maxdepth){
+            break;
         }
         webpage_delete(q);
         free(q_url);
