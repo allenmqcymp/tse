@@ -5,6 +5,8 @@
  * 
  * Step 1 of Module 6
  * 
+ * TODO - may need to refactor code to allow ONE space between word, then split it into separate words
+ * 
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -31,7 +33,7 @@ char *parse_string(char *);
 
 int main() {
 
-    char *textbuf = malloc(BUFSZ);
+    char *textbuf = calloc(BUFSZ, BUFSZ);
     char buffer[BUFSZ];
     printf("> ");
     while( fgets(buffer, BUFSZ, stdin) ) {
