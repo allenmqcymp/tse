@@ -13,6 +13,7 @@
 #include <ctype.h>
 #include <fcntl.h>
 #include <sys/stat.h>
+#include <dirent.h>
 
 #include "pageio.h"
 #include "webpage.h"
@@ -42,17 +43,6 @@ typedef struct document {
 
 // MEMORY FREE FUNCTIONS
 
-// frees the word in the queue_of_documents, frees everything inside the queue, 
-// frees the queue, and frees the queue_of_documents structure
-void free_queues(void *ep) {
-    queue_of_documents_t *temp = (queue_of_documents_t *) ep;
-    free(temp->word);
-    // free every item inside the queue
-    qapply(temp->qp, free);
-    // free the queue itself
-    qclose(temp->qp);
-    free(temp);
-}
 
 // SEARCH FUNCTIONS
 
@@ -138,6 +128,7 @@ int main(int argc, char *argv[]){
     int idx = 1;
     webpage_t *page = pageload(idx, dir);
     while (page != NULL) {
+			printf("%d\n", idx);
         int pos = 0;
         char *word = NULL;
         pos = webpage_getNextWord(page, pos, &word);
@@ -195,10 +186,7 @@ int main(int argc, char *argv[]){
     printf("saving the index\n");
     indexsave(index, indexnm);
 
-    // need to free the queues
-    happly(index, &free_queues);
-
-    hclose(index);
+    indexclose(index);
     fclose(f);
     return (EXIT_SUCCESS);
 }

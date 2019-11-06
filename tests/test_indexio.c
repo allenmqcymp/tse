@@ -52,7 +52,7 @@ int main(int argc, char *argv[]) {
     // save the index using indexsave
     indexsave(h, "./test_indices/indexer1_saved");
     // check that he two files are the same
-    system("diff ./test_indices/indexer1 ../test_indices/indexer1_saved");
+    system("diff ./test_indices/indexer1 ./test_indices/indexer1_saved");
     // free everything
     happly(h, &free_queues);
     hclose(h);

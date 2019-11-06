@@ -39,3 +39,9 @@ int32_t indexsave(hashtable_t *index, char *dirnm);
  * if it fails for some reason, then it returns NULL
  */
 hashtable_t *indexload(char *dirnm);
+
+/*
+ * Added an auxiliary function to close the index
+ * frees the index and all associated queues and structures inside the index
+ */
+void indexclose(hashtable_t *index);

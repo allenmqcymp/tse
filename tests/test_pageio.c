@@ -20,7 +20,7 @@
 #include <errno.h>
 
 int main(void) {
-    webpage_t *test_pg = pageload(42, "../pages/");
+    webpage_t *test_pg = pageload(1, "../pages/");
     if (test_pg == NULL) {
         printf("failed to fetch webpage\n");
         exit(EXIT_FAILURE);
@@ -28,7 +28,7 @@ int main(void) {
     // save the webpage to another file
     pagesave(test_pg, 1000, "../pages/");
     // verify that the two files are the same
-    system("diff ../pages/42 ../pages/1000");
+    system("diff ../pages/1 ../pages/1000");
 	webpage_delete(test_pg);
     exit(EXIT_SUCCESS);
 }

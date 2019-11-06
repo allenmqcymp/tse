@@ -71,8 +71,6 @@ int32_t indexsave(hashtable_t *index, char *fname) {
 
 hashtable_t *indexload(char *fname) {
 
-    printf("loading index\n");
-
     // somehow need to get all the words into a queue
     // but I don't want to use a static queue approach
     // is there an alternative
@@ -87,12 +85,8 @@ hashtable_t *indexload(char *fname) {
 
     // instantiate an index hashtable
     index = hopen(1000);
-
-    printf("loading index 2\n");
     
     while(fgets(line, sizeof(line), f) != NULL) {
-
-        printf("loading index -while loop\n");
         
         char *token;
         char *word;
@@ -114,7 +108,7 @@ hashtable_t *indexload(char *fname) {
         q_docs->qp = qopen();
         q_docs->word = malloc(strlen(word) + 1);
         strcpy(q_docs->word, word);
-        hput(index, q_docs, word, sizeof(word));
+        hput(index, q_docs, word, strlen(word));
 
         // parse the rest of them
         char *docid;
@@ -140,7 +134,23 @@ hashtable_t *indexload(char *fname) {
             }
         }
     }
-
     fclose(f);
     return index;
+}
+
+// frees the word in the queue_of_documents, frees everything inside the queue, 
+// frees the queue, and frees the queue_of_documents structure
+void free_queues(void *ep) {
+    queue_of_documents_t *temp = (queue_of_documents_t *) ep;
+    free(temp->word);
+    // free every item inside the queue
+    qapply(temp->qp, free);
+    // free the queue itself
+    qclose(temp->qp);
+    free(temp);
+}
+
+void indexclose(hashtable_t *index) {
+    happly(index, &free_queues);
+    hclose(index);
 }
