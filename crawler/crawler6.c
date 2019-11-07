@@ -142,12 +142,10 @@ int main(int argc, char * argv[]) {
     webpage_t *q;
     while ((q = (webpage_t *)qget(url_queue)) != NULL){
         depth = webpage_getDepth(q);
-				
-        int pos = 0;
+		int pos = 0;
         char *q_url = NULL;
         pos = webpage_getNextURL(q, pos, &q_url);
         while (pos > 0 && depth < maxdepth) {
-            
             if (IsInternalURL(q_url)){
                 // check if the url is in the hashtable
                 if (hsearch(url_hashtable, &url_search, q_url, strlen(q_url)) == NULL) {
@@ -165,17 +163,20 @@ int main(int argc, char * argv[]) {
                 }else{
                     free(q_url);
                 }
+            }else{
+                free(q_url);
             }
             pos = webpage_getNextURL(q, pos, &q_url);
         }
         webpage_delete(q);
-        free(q_url);
+        if (depth == maxdepth){
+            free(q_url);
+        }
     }
     // free the seed page
 	// close the queue
 	qclose(url_queue);
 	// close the hashtable
 	hclose(url_hashtable);
-
 	exit(EXIT_SUCCESS);
 }
