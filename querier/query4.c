@@ -318,18 +318,15 @@ queue_t *rank_and_query(char **query_list) {
         }
     }
 
-    assert(query_count - 1 == q_count);
+
 
     if (!found_none) {
+        assert(query_count - 1 == q_count);
         // find the intersection of all the queues
         document_rank_table = hopen(50);
         
         queue_of_documents_t **wq_p = word_queues;
         intersection_queues(wq_p);
-
-        // // free the queue
-        // qapply(q_ranks, free);
-        // qclose(q_ranks);
 
         // free the hashtable
         happly(document_rank_table, free);
@@ -381,7 +378,12 @@ void rank_queue(void *ep) {
 void extract_query_count(void *ep) {
     document_rank_t *rt = (document_rank_t *) ep;
     if (rt->freq == query_count) {
-        qput(q_ranks, rt);
+        // make a new copy - so the queue is not related to the hashtable
+        document_rank_t *rt_copy = malloc(sizeof(document_rank_t));
+        rt_copy->freq = rt->freq;
+        rt_copy->id = rt->id;
+        rt_copy->rank = rt->rank;
+        qput(q_ranks, rt_copy);
     }
 }
 
@@ -410,9 +412,56 @@ int compare_ranks(const void *a, const void *b) {
     return -(dt_a->rank - dt_b->rank);
 }
 
-// FREE FUNCTIONS
+// UTILITY FUNCTIONS
 
+void add_to_qranks(void *ep) {
+    document_rank_t *dt = (document_rank_t *) ep;
+    document_rank_t *dt_copy = malloc(sizeof(document_rank_t));
+    dt_copy->freq = dt->freq;
+    dt_copy->id = dt->id;
+    dt_copy->rank = dt->rank;
+    qput(q_ranks, dt_copy);
+}
 
+/*
+ * Assumes q_ranks is non-empty and has stuff to print, prints out as a side effect
+ * Takes in a dirnm - the directory where the pages reside
+ * Memory: managed by function
+ */
+void print_results(char *dirnm) {
+    // sort the intersections - add to a list and use qsort to sort by highest ranking
+    // choose some arbitrary initial number for the list length
+    int curlen = 10;
+    document_rank_t *drt;
+    document_rank_t **rank_lists = calloc(curlen, sizeof(document_rank_t *));
+    int i = 0;
+    while ((drt = qget(q_ranks)) != NULL) {
+        if (i == curlen - 1) {
+            rank_lists = realloc(rank_lists, sizeof(rank_lists) + 10 * sizeof(document_rank_t *));
+            if (rank_lists == NULL) {
+                printf("failed to realloc rank_lists\n");
+                exit(EXIT_FAILURE);
+            }
+            curlen += 10;
+        }
+        // add it to a list
+        rank_lists[i++] = drt;
+    }
+
+    qsort((void *) rank_lists, i, sizeof(document_rank_t *), &compare_ranks);
+
+    for (int j = 0; j < i; j++) {
+        // get the webpage url
+        webpage_t *pg = pageload(rank_lists[j]->id, dirnm);
+        char *url = webpage_getURL(pg);
+        printf("rank: %d, id: %d, url: %s\n", rank_lists[j]->rank, rank_lists[j]->id, url);
+        webpage_delete(pg);
+        free(rank_lists[j]);
+    }
+
+    // free rank_lists
+    free(rank_lists);
+}
 
 
 // MAIN FUNCTION
@@ -445,7 +494,6 @@ int main() {
                 continue;
             }
 
-            printf("parsing query or\n");
             char **and_queries = parse_query_or(textbuf);
 
             if (and_queries == NULL) {
@@ -456,6 +504,9 @@ int main() {
                 // make a queue to concatenate all the separate and queries together
                 queue_t *q_agg = qopen();
 
+                // corresponding hashtable
+                hashtable_t *agg_rank_table = hopen(50);
+
                 // loop through each and query string
                 // compute the rank - output as a queue of document ids
                 // aggregate queues into q_agg (using qconcat)
@@ -463,7 +514,6 @@ int main() {
                 // put into list and return the output
                 for (int i = 0; and_queries[i] != NULL; i++) {
                     // parse the and query
-                    printf("one AND query string is %s\n", and_queries[i]);
 
                     char **and_query_str = parse_query_and(and_queries[i], &query_count);
 
@@ -473,19 +523,12 @@ int main() {
                     else {
                         queue_t *rank_and = rank_and_query(and_query_str);
 
-                        if (rank_and == NULL) {
-                            printf("ranking of and string is NULL\n");
-                        }
-                        else {
-                            printf("ranking of and string is not NULL\n");
+                        if (rank_and != NULL) {
                             qconcat(q_agg, rank_and);
                         }
 
-                        // do stuff now
-
                         // free every string
                         for (int j = 0; and_query_str[j] != NULL; j++) {
-                            printf("%s\n", and_query_str[j]);
                             free(and_query_str[j]);
                         }
                         // free the array of strings
@@ -494,9 +537,57 @@ int main() {
                         free(and_queries[i]);
                     }
                 }
+                        
+                document_rank_t *cur_rt;
+                while ((cur_rt = qget(q_agg)) != NULL) {
+
+                    // check if cur_rt exists in the hashtable
+                    document_rank_t *temp_rt;
+                    char strid[32];
+                    sprintf(strid, "%d", cur_rt->id);
+                    if ((temp_rt = hsearch(agg_rank_table, &id_search, strid, strlen(strid))) == NULL) {
+                        document_rank_t *new_rt = malloc(sizeof(document_rank_t));
+                        new_rt->freq = cur_rt->freq;
+                        new_rt->id = cur_rt->id;
+                        new_rt->rank = cur_rt->rank;
+                        hput(agg_rank_table, (void *) new_rt, strid, strlen(strid));
+                        
+                    }
+                    else {
+                        temp_rt->rank += cur_rt->rank;
+                    }
+                    free(cur_rt);
+                }
+
                 free(and_queries);
+                qapply(q_agg, free);
                 qclose(q_agg);
 
+                // print stuff out of the hashtable
+                // use the queue as temporary storage 
+
+                q_ranks = qopen();
+                happly(agg_rank_table, &add_to_qranks);
+
+                printf("--------\n");
+            
+                document_rank_t *test_item;
+                if ((test_item = qget(q_ranks)) == NULL) {
+                    printf("nothing found\n");
+                }
+                else {
+                    print_results(dirnm);
+                }
+
+                qapply(q_ranks, free);
+                qclose(q_ranks);
+
+                // free the hashtable
+
+                happly(agg_rank_table, free);
+                hclose(agg_rank_table);
+
+                
             }
         }
         printf("> ");
