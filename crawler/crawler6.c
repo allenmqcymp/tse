@@ -135,54 +135,48 @@ int main(int argc, char * argv[]) {
 	// make a hashtable of visited webpages
 	hashtable_t *url_hashtable = hopen(1000);
 
-
     //put the seed page into the hash and the queue
     qput(url_queue, seed_page);
     hput(url_hashtable, seed_url, seed_url, sizeof(seed_url));
-
+    int depth;
     webpage_t *q;
     while ((q = (webpage_t *)qget(url_queue)) != NULL){
-        int pos = 0;
+        depth = webpage_getDepth(q);
+		int pos = 0;
         char *q_url = NULL;
         pos = webpage_getNextURL(q, pos, &q_url);
-        while (pos > 0) {
-            fflush(stdout);
-            int depth = webpage_getDepth(q);
-            if (depth > maxdepth){
-                break;
-            }
-            
+        while (pos > 0 && depth < maxdepth) {
             if (IsInternalURL(q_url)){
                 // check if the url is in the hashtable
                 if (hsearch(url_hashtable, &url_search, q_url, strlen(q_url)) == NULL) {
                     // add the url to the hashtable
-                    
                     hput(url_hashtable, q_url, q_url, sizeof(char) * strlen(q_url));
                     // create a new webpage
                     webpage_t *pg = webpage_new(q_url, depth + 1, NULL);
-                    webpage_fetch(pg);
-                    // place it in the queue
-                    
+                    bool real = webpage_fetch(pg);
                     qput(url_queue, pg);
                     // save the page under id
-                    if (webpage_getHTMLlen(pg) != 47){
+                    if (webpage_getHTMLlen(pg) != 47 && real){
                         pagesave(pg, id, pagedir);
+                        id++;
                     }
-                    id++;
                 }else{
                     free(q_url);
                 }
+            }else{
+                free(q_url);
             }
             pos = webpage_getNextURL(q, pos, &q_url);
         }
         webpage_delete(q);
-        free(q_url);
+        if (depth == maxdepth){
+            free(q_url);
+        }
     }
     // free the seed page
 	// close the queue
 	qclose(url_queue);
 	// close the hashtable
 	hclose(url_hashtable);
-
 	exit(EXIT_SUCCESS);
 }
