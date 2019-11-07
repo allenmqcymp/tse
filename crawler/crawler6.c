@@ -146,7 +146,7 @@ int main(int argc, char * argv[]) {
         int pos = 0;
         char *q_url = NULL;
         pos = webpage_getNextURL(q, pos, &q_url);
-        while (pos > 0) {
+        while (pos > 0 && depth < maxdepth) {
             
             if (IsInternalURL(q_url)){
                 // check if the url is in the hashtable
@@ -156,27 +156,17 @@ int main(int argc, char * argv[]) {
                     // create a new webpage
                     webpage_t *pg = webpage_new(q_url, depth + 1, NULL);
                     bool real = webpage_fetch(pg);
-                    if (!real){
-                        continue;
-                    }
-                    // place it in the queue
-                    if (depth == maxdepth){
-                        break;
-                    }
                     qput(url_queue, pg);
                     // save the page under id
-                    if (webpage_getHTMLlen(pg) != 47){
+                    if (webpage_getHTMLlen(pg) != 47 && real){
                         pagesave(pg, id, pagedir);
+                        id++;
                     }
-                    id++;
                 }else{
                     free(q_url);
                 }
             }
             pos = webpage_getNextURL(q, pos, &q_url);
-        }
-        if (depth == maxdepth){
-            break;
         }
         webpage_delete(q);
         free(q_url);
