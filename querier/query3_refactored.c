@@ -3,7 +3,7 @@
  * 
  * Author: Stjepan Vrbic, Allen Ma
  * 
- * Step 4 of Module 6
+ * Step 3 of Module 6 - basically identical to step 3, but with better code
  * 
  * 
  */
@@ -56,25 +56,23 @@ typedef struct document_rank {
  */
 
 // global document hashtable - changed for each query
-// mutated every query
 static hashtable_t *document_rank_table;
-
-// global queue to hold ids from the document_rank_table
-// mutated every query
 static queue_t *q_ranks;
 
 // number of query terms (just AND) - used to filter out terms in the hashtable
 static int query_count;
 
-// global index - load up indexfile here
-static hashtable_t *index;
+// load up the index 
+hashtable_t *index;
+
 
 /*
  * FUNCTION PROTOTYPES
  */
 
 void intersection_queues(queue_of_documents_t **queues);
-queue_t *rank_and_query(char **and_query);
+char **parse_query(char *s, int *query_count);
+char *parse_one_query(char **query_list, char *dirnm);
 
 int compare_ranks(const void *a, const void *b);
 
@@ -84,6 +82,7 @@ int compare_ranks(const void *a, const void *b);
 int min(int a, int b) {
     return a < b ? a : b;
 }
+
 
 
 // SEARCH FUNCTIONS FOR THE INDEX
@@ -117,7 +116,7 @@ bool document_word_search(void *ep, const void *sp) {
 /*
  * returns false if string contains non alphabetical characters
  */
-bool check_invalid_char(char *s) {
+bool check_string(char *s) {
     for (int i = 0; s[i]; i++) {
         // exempt whitespace
         if (s[i] == ' ' || s[i] == '\t' || s[i] == '\n' || s[i] == '\r') {
@@ -142,92 +141,9 @@ bool has_alpha(char *s) {
     return false;
 }
 
-
-/*
- * Input: a string that contains query terms with 0 or more of the pattern "<space>or<space>"
- * Returns: - in the case of a valid split: a list of string where each string itself is an AND query
- * NULL if one of the split strings is invalid - ie. it is whitespace
- * Assumptions - the input string has no punctuation and has alphabetical characters
- * MEMORY: if the result is null, then no need to free, otherwise, need to free the list of strings
- */
-char **parse_query_or(char *s) {
-    // strip the last character which is a newline in the query
-    s[strcspn(s, "\n")] = '\0';
-
-    // first, convert all characters to lowercase
-    for (int i = 0; s[i]; i++) {
-        s[i] = tolower(s[i]);
-    }
-
-    char **query_words = calloc(MAX_QUERY_WORDS, sizeof(char *));
-
-    char *temp_buffer = calloc(1, 1);
-
-    int i = 0;
-    // we note that or is always surrounded by two spaces
-    char *splitter = " \t";
-    char *token = strtok(s, splitter);
-
-    int or_count = 0;
-    int segment_count = 0;
-
-    while (token) {
-
-        // check if the token is of length less than 2 and it's not the special operator OR
-        if ((strlen(token) < MIN_WORD_LENGTH) && (strcmp(token, "or") != 0)) {
-            token = strtok(NULL, splitter);
-            continue;
-        }
-
-        if (strcmp(token, "or") == 0) {
-            // add the current temp_buffer to the queue of words
-            // only do so if the temp_buffer actually has stuff inside, not just the calloced 0
-            if (temp_buffer[0]) {
-                segment_count++;
-                char *and_string = malloc(strlen(temp_buffer) + 1);
-                strcpy(and_string, temp_buffer);
-                query_words[i++] = and_string;
-                // clear the temp_buffer back to 1
-                free(temp_buffer);
-                temp_buffer = calloc(1, 1);
-            }
-            token = strtok(NULL, splitter);
-            or_count++;
-            continue;
-        }
-
-        // plus two because we add a space as well as a EOL character
-        temp_buffer = realloc(temp_buffer, strlen(temp_buffer) + strlen(token) + 2);
-        if (temp_buffer == NULL) {
-            printf("realloc failed when parsing query\n");
-            exit(EXIT_FAILURE);
-        }
-        strcat(temp_buffer, " ");
-        strcat(temp_buffer, token);
-
-        token = strtok(NULL, splitter);
-    }
-
-    if (temp_buffer[0]) {
-        char *final_string = malloc(strlen(temp_buffer) + 1);
-        strcpy(final_string, temp_buffer);
-        query_words[i++] = final_string;
-        segment_count++;
-    }
-
-    free(temp_buffer);
-
-    if (or_count + 1 != segment_count) {
-        int j = 0;
-        while (query_words[j] != 0) {
-            free(query_words[j++]);
-        }
-        free(query_words);
-        return NULL;
-    }
-
-    return query_words;
-}
+// char **parse_query_and(char *s) {
+//     return NULL;
+// }
 
 
 /*
@@ -238,7 +154,7 @@ char **parse_query_or(char *s) {
  * MEMORY: caller needs to free the array of strings, as well as the strings themselves
  * query_count is the number of query tokens
  */
-char **parse_query_and(char *s, int *query_count) {
+char **parse_query(char *s, int *query_count) {
     // strip the last character which is a newline in the query
     s[strcspn(s, "\n")] = '\0';
 
@@ -254,17 +170,16 @@ char **parse_query_and(char *s, int *query_count) {
     // we note that or is always surrounded by two spaces
     char *splitter = " \t";
     char *token = strtok(s, splitter);
-    int and_count = 0;
-    int segment_count = 0;
     while (token) {
-        if ((strlen(token) < MIN_WORD_LENGTH)) {
+        // check if the token is of length less than 2 and it's not the special operator OR
+        if ((strlen(token) < MIN_WORD_LENGTH) && (strcmp(token, "or") != 0)) {
             token = strtok(NULL, splitter);
             continue;
         }
 
-        if (strcmp(token, "and") == 0) {
+        // for now, ignore all ands and ors
+        if (strcmp(token, "or") == 0 || strcmp(token, "and") == 0) {
             token = strtok(NULL, splitter);
-            and_count++;
             continue;
         }
 
@@ -273,19 +188,7 @@ char **parse_query_and(char *s, int *query_count) {
         strcpy(word, token);
         query_words[i++] = word;
         token = strtok(NULL, splitter);
-        segment_count++;
     }
-
-    if (and_count >= segment_count) {
-        int j = 0;
-        while (query_words[j] != 0) {
-            free(query_words[j++]);
-        }
-        free(query_words);
-        *query_count = 0;
-        return NULL;
-    }
-
     *query_count = i;
     return query_words;
 }
@@ -293,11 +196,11 @@ char **parse_query_and(char *s, int *query_count) {
 
 /*
  * Parses one query, returns query result
- * Inputs: list of strings representing query lists, directory name where the pages are stored
+ * Inputs: list of strings representing query lists, ands implicitly added in between spaces; directory name where the pages are stored
  * Outputs: query result to print out
  * Memory: Need to free the output string later
  */
-queue_t *rank_and_query(char **query_list) {
+char *parse_one_query(char **query_list, char *dirnm) {
     // counter to check query_count is the same as i
     int q_count = 0;
     bool found_none = false; // flag is set to true when the query word appears in none of the webpages
@@ -311,40 +214,85 @@ queue_t *rank_and_query(char **query_list) {
         queue_of_documents_t *q_word = hsearch(index, &document_queue_search, word, strlen(word));
         if (q_word == NULL) { // the word doesn't exist in the index at all
             found_none = true;
-            break;
         }
         else {
             word_queues[i] = q_word;
         }
     }
 
+    char *return_msg = malloc(256);
+
     assert(query_count - 1 == q_count);
 
-    if (!found_none) {
+    if (found_none) {
+        // then don't return anything since no pages match
+        sprintf(return_msg, "--------\nno pages found\n");
+    }
+    else {
         // find the intersection of all the queues
         document_rank_table = hopen(50);
         
         queue_of_documents_t **wq_p = word_queues;
         intersection_queues(wq_p);
 
-        // // free the queue
-        // qapply(q_ranks, free);
-        // qclose(q_ranks);
+        // sort the intersections - add to a list and use qsort to sort by highest ranking
+        // choose some arbitrary initial number for the list length
+        int curlen = 10;
+        document_rank_t *drt;
+        document_rank_t **rank_lists = calloc(curlen, sizeof(document_rank_t *));
+        int i = 0;
+        while ((drt = qget(q_ranks)) != NULL) {
+            if (i == curlen - 1) {
+                rank_lists = realloc(rank_lists, sizeof(rank_lists) + 10 * sizeof(document_rank_t *));
+                if (rank_lists == NULL) {
+                    printf("failed to realloc rank_lists\n");
+                    exit(EXIT_FAILURE);
+                }
+                curlen += 10;
+            }
+            // add it to a list
+            rank_lists[i++] = drt;
+        }
+
+
+        qsort((void *) rank_lists, i, sizeof(document_rank_t *), &compare_ranks);
+
+        sprintf(return_msg, "--------\n");
+        char temp_buf[128];
+        for (int j = 0; j < i; j++) {
+            // get the webpage url
+            webpage_t *pg = pageload(rank_lists[j]->id, dirnm);
+            char *url = webpage_getURL(pg);
+            sprintf(temp_buf, "rank: %d, id: %d, url: %s\n", rank_lists[j]->rank, rank_lists[j]->id, url);
+            webpage_delete(pg);
+
+            return_msg = realloc(return_msg, strlen(return_msg) + strlen(temp_buf) + 1);
+            if (return_msg == NULL) {
+                printf("failed to realloc\n");
+                exit(EXIT_FAILURE);
+            }
+            strcat(return_msg, temp_buf);
+        }
+
+        // free rank_lists
+        free(rank_lists);
+
+        // free the queue
+        qapply(q_ranks, free);
+        qclose(q_ranks);
+
 
         // free the hashtable
         happly(document_rank_table, free);
         hclose(document_rank_table);
+
     }
 
     // don't need to free the queues themselves since index is still referencing them
     free(word_queues);
 
-    if (found_none) {
-        return NULL;
-    }
-    else {
-        return q_ranks;
-    }    
+    return return_msg;
+    
 }
 
 // RANKING FUNCTIONS
@@ -429,74 +377,35 @@ int main() {
 
     // static buffer to hold the query - assume it won't overflow BUFSZ
     char textbuf[BUFSZ];
-    
     printf("> ");
+
     // each iteration of the while loop analyzes one query
     while (fgets(textbuf, BUFSZ, stdin) ) {
         // analyze the string read in
         // check if buffer read in a new line
-        if (!check_invalid_char(textbuf)) {
-            printf("[invalid query]!\n");
-        }
-        else {
-
-            if (!has_alpha(textbuf)) {
-                printf("> ");
-                continue;
-            }
-
-            printf("parsing query or\n");
-            char **and_queries = parse_query_or(textbuf);
-
-            if (and_queries == NULL) {
-                printf("[invalid query]!\n");
+        if (has_alpha(textbuf)) {
+            if (!check_string(textbuf)) {
+                printf("[invalid query]\n");
             }
             else {
 
-                // make a queue to concatenate all the separate and queries together
-                queue_t *q_agg = qopen();
+                char **query = parse_query(textbuf, &query_count);
 
-                // loop through each and query string
-                // compute the rank - output as a queue of document ids
-                // aggregate queues into q_agg (using qconcat)
-                // place all into hashtable with the sum
-                // put into list and return the output
-                for (int i = 0; and_queries[i] != NULL; i++) {
-                    // parse the and query
-                    printf("one AND query string is %s\n", and_queries[i]);
-
-                    char **and_query_str = parse_query_and(and_queries[i], &query_count);
-
-                    if (and_query_str == NULL) {
-                        printf("[invalid query]!\n");
-                    }
-                    else {
-                        queue_t *rank_and = rank_and_query(and_query_str);
-
-                        if (rank_and == NULL) {
-                            printf("ranking of and string is NULL\n");
-                        }
-                        else {
-                            printf("ranking of and string is not NULL\n");
-                            qconcat(q_agg, rank_and);
-                        }
-
-                        // do stuff now
-
-                        // free every string
-                        for (int j = 0; and_query_str[j] != NULL; j++) {
-                            printf("%s\n", and_query_str[j]);
-                            free(and_query_str[j]);
-                        }
-                        // free the array of strings
-                        free(and_query_str);
-                        // free the string
-                        free(and_queries[i]);
-                    }
+                // if it's just OR and AND in the query string, then query_count will be 0
+                // so don't do anything
+                if (query_count > 0) {
+                    char *res = parse_one_query(query, dirnm);
+                    printf("%s", res);
+                    free(res);
                 }
-                free(and_queries);
-                qclose(q_agg);
 
+                // FREE MEMORY
+
+                // free the query and its associated strings
+                for (int i = 0; query[i] != NULL; i++) {
+                    free(query[i]);
+                }
+                free(query);
             }
         }
         printf("> ");

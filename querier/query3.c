@@ -151,6 +151,7 @@ char **parse_query(char *s, int *query_count) {
     char *splitter = " \t";
     char *token = strtok(s, splitter);
     while (token) {
+
         // check if the token is of length less than 2 and it's not the special operator OR
         if ((strlen(token) < MIN_WORD_LENGTH) && (strcmp(token, "or") != 0)) {
             token = strtok(NULL, splitter);
@@ -286,13 +287,14 @@ int main() {
                         queue_of_documents_t *q_word = hsearch(index, &document_queue_search, word, strlen(word));
                         if (q_word == NULL) { // the word doesn't exist in the index at all
                             found_none = true;
-                            break;
                         }
                         else {
                             word_queues[i] = q_word;
                         }
                     }
 
+                    printf("q_count %d\n", q_count);
+                    printf("query count %d\n", query_count);
                     assert(query_count - 1 == q_count);
 
                     if (found_none) {
