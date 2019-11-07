@@ -142,6 +142,7 @@ int main(int argc, char * argv[]) {
     webpage_t *q;
     while ((q = (webpage_t *)qget(url_queue)) != NULL){
         depth = webpage_getDepth(q);
+				
         int pos = 0;
         char *q_url = NULL;
         pos = webpage_getNextURL(q, pos, &q_url);
