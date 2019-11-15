@@ -2,7 +2,7 @@ CFLAGS=-Wall -pedantic -std=c11 -I. -g
 CC=gcc
 LIBS=-lm
 
-OFILES=queue.o hash.o webpage.o pageio.o indexio.o
+OFILES=queue.o hash.o webpage.o pageio.o indexio.o lqueue.o
 
 all: $(OFILES)
 	ar cr ../lib/libutils.a $(OFILES)
@@ -20,6 +20,9 @@ pageio.o: pageio.c pageio.h webpage.h
 	$(CC) $(CFLAGS) -c $<
 
 indexio.o: indexio.c indexio.h hash.h
+	$(CC) $(CFLAGS) -c $<
+
+lqueue.o: lqueue.c lqueue.h queue.h
 	$(CC) $(CFLAGS) -c $<
 
 clean:

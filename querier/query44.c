@@ -1,10 +1,9 @@
-
-/* query5.c ---
+/* query.c ---
  * 
  * 
  * Author: Stjepan Vrbic, Allen Ma
  * 
- * Step 5 of Module 6
+ * Step 4 of Module 6
  * 
  * 
  */
@@ -319,6 +318,7 @@ queue_t *rank_and_query(char **query_list) {
         }
     }
 
+
     if (!found_none) {
         assert(query_count - 1 == q_count);
         // find the intersection of all the queues
@@ -328,7 +328,6 @@ queue_t *rank_and_query(char **query_list) {
         intersection_queues(wq_p);
 
         // free the hashtable
-        happly(document_rank_table, free);
         hclose(document_rank_table);
     }
 
@@ -436,12 +435,12 @@ void print_results(char *dirnm) {
     int i = 0;
     while ((drt = qget(q_ranks)) != NULL) {
         if (i == curlen - 1) {
-            rank_lists = realloc(rank_lists, sizeof(rank_lists) + 10 * sizeof(document_rank_t *));
+            curlen += 10;
+            rank_lists = realloc(rank_lists, curlen * sizeof(document_rank_t *));
             if (rank_lists == NULL) {
                 printf("failed to realloc rank_lists\n");
                 exit(EXIT_FAILURE);
             }
-            curlen += 10;
         }
         // add it to a list
         rank_lists[i++] = drt;
@@ -462,13 +461,22 @@ void print_results(char *dirnm) {
     free(rank_lists);
 }
 
+void print_queue_function(void *ep) {
+    document_rank_t *dt = (document_rank_t *) ep;
+    printf("inside print_queue_function id: %d, rank:%d\n", dt->id, dt->rank);
+}
+
 
 // MAIN FUNCTION
 
-int main(int argc, char *argv[]) {
+int main() {
 
-    char *dirnm = "../pages3/";
+    // location of the index file
     char *doc1 = "./indexnm3";
+    // where the pages are stored
+    char *dirnm = "../pages3/";
+
+    // load up the index 
     index = indexload(doc1);
 
     // static buffer to hold the query - assume it won't overflow BUFSZ
@@ -510,7 +518,7 @@ int main(int argc, char *argv[]) {
                 for (int i = 0; and_queries[i] != NULL; i++) {
                     // parse the and query
 
-                    printf("the and_queries is %s\n", and_queries[i]);
+                    printf("the AND query string is %s\n", and_queries[i]);
 
                     char **and_query_str = parse_query_and(and_queries[i], &query_count);
 
@@ -518,10 +526,16 @@ int main(int argc, char *argv[]) {
                         printf("[invalid query]!\n");
                     }
                     else {
+                        printf("ranking the and string\n");
+
                         queue_t *rank_and = rank_and_query(and_query_str);
 
+                        printf("printing stuff inside the queue\n");
+
+                        qapply(rank_and, &print_queue_function);
 
                         if (rank_and != NULL) {
+                            printf("qconcated the rank_and_queue\n");
                             qconcat(q_agg, rank_and);
                         }
 
@@ -535,12 +549,10 @@ int main(int argc, char *argv[]) {
                         free(and_queries[i]);
                     }
                 }
-
-                printf("reached while loop\n");
-                        
+    
                 document_rank_t *cur_rt;
                 while ((cur_rt = qget(q_agg)) != NULL) {
-
+                    printf("inside while, cur_rt id: %d, rank: %d\n", cur_rt->id, cur_rt->rank);
                     // check if cur_rt exists in the hashtable
                     document_rank_t *temp_rt;
                     char strid[32];
@@ -563,8 +575,6 @@ int main(int argc, char *argv[]) {
                 qapply(q_agg, free);
                 qclose(q_agg);
 
-                printf("making q_agg\n");
-
                 // print stuff out of the hashtable
                 // use the queue as temporary storage 
 
@@ -578,7 +588,6 @@ int main(int argc, char *argv[]) {
                     printf("nothing found\n");
                 }
                 else {
-                    qput(q_ranks, test_item);
                     print_results(dirnm);
                 }
 
@@ -590,18 +599,13 @@ int main(int argc, char *argv[]) {
                 happly(agg_rank_table, free);
                 hclose(agg_rank_table);
 
-                printf("freed the hashtable\n");
-
+                
             }
         }
         printf("> ");
     }
-    printf("reached indexclose\n");
-    // indexclose(index);
-    printf("freed the index\n");
+    indexclose(index);
     // free the list of queues, and the queues themselves
     exit(EXIT_SUCCESS);
 }
-
-
 

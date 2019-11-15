@@ -330,7 +330,7 @@ queue_t *rank_and_query(char **query_list) {
         intersection_queues(wq_p);
 
         // free the hashtable
-        happly(document_rank_table, free);
+        //happly(document_rank_table, free);
         hclose(document_rank_table);
     }
 
@@ -438,12 +438,13 @@ void print_results(char *dirnm) {
     int i = 0;
     while ((drt = qget(q_ranks)) != NULL) {
         if (i == curlen - 1) {
-            rank_lists = realloc(rank_lists, sizeof(rank_lists) + 10 * sizeof(document_rank_t *));
+			curlen += 10;
+            rank_lists = realloc(rank_lists, curlen * sizeof(document_rank_t *));
             if (rank_lists == NULL) {
                 printf("failed to realloc rank_lists\n");
                 exit(EXIT_FAILURE);
             }
-            curlen += 10;
+            
         }
         // add it to a list
         rank_lists[i++] = drt;
@@ -518,10 +519,12 @@ int main(int argc, char *argv[]) {
     printf("> ");
     // each iteration of the while loop analyzes one query
     while (fgets(textbuf, BUFSZ, stdin) ) {
+		bool invalid = false;
         // analyze the string read in
         // check if buffer read in a new line
         if (!check_invalid_char(textbuf)) {
             printf("[invalid query]!\n");
+			invalid = true;
         }
         else {
 
@@ -534,6 +537,7 @@ int main(int argc, char *argv[]) {
 
             if (and_queries == NULL) {
                 printf("[invalid query]!\n");
+				invalid = true;
             }
             else {
 
@@ -555,6 +559,7 @@ int main(int argc, char *argv[]) {
 
                     if (and_query_str == NULL) {
                         printf("[invalid query]!\n");
+						invalid = true;
                     }
                     else {
                         queue_t *rank_and = rank_and_query(and_query_str);
@@ -613,15 +618,17 @@ int main(int argc, char *argv[]) {
                 }
                 else {
                     qput(q_ranks, test_item);
-                    print_results(dirnm);
+					if (!invalid){
+                    	print_results(dirnm);
+					}
                 }
 
                 qapply(q_ranks, free);
-                qclose(q_ranks);
+                //qclose(q_ranks);
 
                 // free the hashtable
 
-                happly(agg_rank_table, free);
+                //happly(agg_rank_table, free);
                 hclose(agg_rank_table);
 
                 
@@ -629,7 +636,7 @@ int main(int argc, char *argv[]) {
         }
         printf("> ");
     }
-    indexclose(index);
+    //indexclose(index);
     // free the list of queues, and the queues themselves
     exit(EXIT_SUCCESS);
 }

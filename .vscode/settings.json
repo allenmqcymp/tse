@@ -6,6 +6,7 @@
         "chrono": "c",
         "unordered_map": "c",
         "__locale": "c",
-        "thread": "c"
+        "thread": "c",
+        "lqueue.h": "c"
     }
 }
