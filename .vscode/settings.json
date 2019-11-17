@@ -7,6 +7,9 @@
         "unordered_map": "c",
         "__locale": "c",
         "thread": "c",
-        "lqueue.h": "c"
+        "lqueue.h": "c",
+        "queue.h": "c",
+        "syscall.h": "c",
+        "types.h": "c"
     }
 }

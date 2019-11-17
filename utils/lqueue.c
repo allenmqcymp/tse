@@ -12,7 +12,7 @@
 
 typedef queue_t lqueue_t;
 
-pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t mutexq = PTHREAD_MUTEX_INITIALIZER;
 
 lqueue_t* lqopen(void) {
     return qopen();
@@ -20,9 +20,9 @@ lqueue_t* lqopen(void) {
 
 /* deallocate a queue, frees everything in it */
 void lqclose(lqueue_t *qp) {
-    pthread_mutex_lock(&mutex);
+    pthread_mutex_lock(&mutexq);
     qclose(qp);
-    pthread_mutex_unlock(&mutex);
+    pthread_mutex_unlock(&mutexq);
 }
 
 /* put element at the end of the queue
@@ -30,26 +30,27 @@ void lqclose(lqueue_t *qp) {
  */
 int32_t lqput(lqueue_t *qp, void *elementp) {
     int ret_val = -1;
-    pthread_mutex_lock(&mutex);
+    pthread_mutex_lock(&mutexq);
+    printf("putting stuff in lqueue\n");
     ret_val = qput(qp, elementp);
-    pthread_mutex_unlock(&mutex);
+    pthread_mutex_unlock(&mutexq);
     return ret_val;
 }
 
 /* get the first first element from queue, removing it from the queue */
 void* lqget(lqueue_t *qp) {
     void *r = NULL;
-    pthread_mutex_lock(&mutex);
+    pthread_mutex_lock(&mutexq);
     r = qget(qp);
-    pthread_mutex_unlock(&mutex);
+    pthread_mutex_unlock(&mutexq);
     return r;
 }
 
 /* apply a function to every element of the queue */
 void lqapply(lqueue_t *qp, void (*fn)(void* elementp)) {
-    pthread_mutex_lock(&mutex);
+    pthread_mutex_lock(&mutexq);
     qapply(qp, fn);
-    pthread_mutex_unlock(&mutex);
+    pthread_mutex_unlock(&mutexq);
 }
 
 /* search a queue using a supplied boolean function
@@ -63,9 +64,9 @@ void lqapply(lqueue_t *qp, void (*fn)(void* elementp)) {
  */
 void* lqsearch(lqueue_t *qp, bool (*searchfn)(void* elementp,const void* keyp), const void* skeyp) {
     void *r = NULL;
-    pthread_mutex_lock(&mutex);
+    pthread_mutex_lock(&mutexq);
     r = qsearch(qp, searchfn, skeyp);
-    pthread_mutex_unlock(&mutex);
+    pthread_mutex_unlock(&mutexq);
     return r;
 }
 
@@ -75,10 +76,18 @@ void* lqsearch(lqueue_t *qp, bool (*searchfn)(void* elementp,const void* keyp), 
  */
 void* lqremove(lqueue_t *qp, bool (*searchfn)(void* elementp,const void* keyp), const void* skeyp) {
     void *r = NULL;
-    pthread_mutex_lock(&mutex);
+    pthread_mutex_lock(&mutexq);
     r = qremove(qp, searchfn, skeyp);
-    pthread_mutex_unlock(&mutex);
+    pthread_mutex_unlock(&mutexq);
     return r;
+}
+
+/*
+ * Returns a pointer to the front of the queue if possible
+ * Else, returns null
+ */
+void *lqpeek(lqueue_t *qp) {
+    return qpeek(qp);
 }
 
 /*
@@ -89,14 +98,14 @@ void* lqremove(lqueue_t *qp, bool (*searchfn)(void* elementp,const void* keyp), 
 bool lqsearch_action(lqueue_t *qp, bool (*searchfn)(void* elementp,const void* keyp), const void* skeyp, void (*fn)(void *ep)) {
     bool success = false;
     void *r = NULL;
-    pthread_mutex_lock(&mutex);
+    pthread_mutex_lock(&mutexq);
     r = qsearch(qp, searchfn, skeyp);
     if (r != NULL) {
         // perform the action
         fn(r);
         success = true;
     }
-    pthread_mutex_unlock(&mutex);
+    pthread_mutex_unlock(&mutexq);
     return success;
 }
 
@@ -104,8 +113,7 @@ bool lqsearch_action(lqueue_t *qp, bool (*searchfn)(void* elementp,const void* k
  * q2 is dealocated, closed, and unusable upon completion 
  */
 void lqconcat(lqueue_t *q1p, lqueue_t *q2p) {
-    pthread_mutex_lock(&mutex);
+    pthread_mutex_lock(&mutexq);
     qconcat(q1p, q2p);
-    pthread_mutex_unlock(&mutex);
+    pthread_mutex_unlock(&mutexq);
 }
-

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Allen Ma, driver code for testing list
+# Allen Ma, driver code for testing lqueue
 # dependency - runtest.sh placed in ~/bin
 
 for f in test_lqueue*

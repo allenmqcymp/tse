@@ -51,3 +51,13 @@ void* lqremove(lqueue_t *qp,
  */
 void lqconcat(lqueue_t *q1p, lqueue_t *q2p);
 
+/* peek the queue - returns pointer to the head of the queue. returns NULL if queue is empty */
+void *lqpeek(lqueue_t *qp);
+
+/*
+ * Performs a search, and if successful, performs the action, and returns true, to indicate that
+ * the action was performed
+ * Otherwise, return false to indicate the action was not performed
+ */
+bool lqsearch_action(lqueue_t *qp, bool (*searchfn)(void* elementp,const void* keyp), const void* skeyp, void (*fn)(void *ep));
+
