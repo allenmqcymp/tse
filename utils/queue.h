@@ -25,9 +25,6 @@ void* qget(queue_t *qp);
 /* apply a function to every element of the queue */
 void qapply(queue_t *qp, void (*fn)(void* elementp));
 
-/* peek the front of the queue - returns NULL if the queue is empty */
-void *qpeek(queue_t *qp);
-
 /* search a queue using a supplied boolean function
  * skeyp -- a key to search for
  * searchfn -- a function applied to every element of the queue
@@ -53,4 +50,7 @@ void* qremove(queue_t *qp,
  * q2 is dealocated, closed, and unusable upon completion 
  */
 void qconcat(queue_t *q1p, queue_t *q2p);
+
+/* get the length of the queue */
+int qlen(queue_t *qp);
 

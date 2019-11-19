@@ -31,16 +31,18 @@
 #include "lhash.h"
 #include "pageio.h"
 
+typedef struct args {
+    int id;
+} args_t;
+
 
 lqueue_t *url_queue;
 lhashtable_t *url_hashtable;
 
 int id;
 
-
 pthread_mutex_t global_mutex = PTHREAD_MUTEX_INITIALIZER;
 int num_finished_threads = 0;
-bool did_think_finish = false;
 
 int MAXDEPTH;
 int NUM_THREADS;
@@ -55,37 +57,65 @@ bool url_search(void *page_url, const void *search_url) {
 	return false;
 }
 
-void *perform_crawl(void *ptr) {
+void *perform_crawl(void *st) {
+
+    printf("entering perform_crawl function, thread id %d\n", id);
+
+    args_t *st_i = (args_t *) st;
+    int tid = st_i->id;
+
+    bool did_think_finish = false;
 
     webpage_t *pg;
     while (num_finished_threads < NUM_THREADS) {
 
-        printf("thread id %ld, num_finished_threads %d\n", pthread_self(), num_finished_threads);
+        // printf("TOP: %d, finished %d\n", tid, num_finished_threads);
+        fflush(stdout);
 
-        pthread_mutex_lock(&global_mutex);
+        // check if global_mutex unlocked
         pg = lqget(url_queue);
+
         if (pg == NULL) {
-            num_finished_threads++;
+            // lqlen acquires mutex, may cause issues
+            // printf("thread id %ld, pg is NULL, qlen is %d\n\n", pthread_self(), lqlen(url_queue));
+            fflush(stdout);
+            if (!did_think_finish) {
+                printf("ID: %d IS NOW IDLE\n", tid);
+                num_finished_threads++;
+            }
+            else {
+                // printf("ID: %d already idle\n", tid);
+            }
             did_think_finish = true;
+            continue;
         }
         else {
             if (did_think_finish) {
+                printf("ID: %d REACTIVATED, pg_url from queue is %s\n", tid, webpage_getURL(pg));
+                fflush(stdout);
                 num_finished_threads--;
-                did_think_finish = false;
             }
-        }
-        pthread_mutex_unlock(&global_mutex);
-
-        if (pg == NULL) {
-            printf("thread id %ld, pg is NULL\n", pthread_self());
-            continue;
+            else {
+                printf("ID: %d already active, pg_url from queue is %s\n", tid, webpage_getURL(pg));
+            }
+            did_think_finish = false;
         }
 
         int depth = webpage_getDepth(pg);
 
-        printf("thread id %ld, depth is %d\n", pthread_self(), depth);
+        bool res = webpage_fetch(pg);
+        if (!res) {
+            printf("failed to fetch for %s\n", webpage_getURL(pg));
+            exit(EXIT_FAILURE);
+        }
+
+        pthread_mutex_lock(&global_mutex);
+        pagesave(pg, id, pagedir);
+        id++;
+        pthread_mutex_unlock(&global_mutex);
 
         if (depth >= MAXDEPTH) {
+            printf("ID %d, maxdepth reached, so not expanding %s\n", id, webpage_getURL(pg));
             continue;
         }
         
@@ -93,33 +123,29 @@ void *perform_crawl(void *ptr) {
         int pos = 0;
         while ((pos = webpage_getNextURL(pg, pos, &q_url)) > 0) {
             fflush(stdout);
-            printf("q_url is %s\n", q_url);
             if (!IsInternalURL(q_url)) {
                 free(q_url);
                 continue;
             }
+
+            printf("ID: %d, during expansion of %s, found %s\n", tid, webpage_getURL(pg), q_url);
             
             bool added = lhsearch_add(url_hashtable, url_search, q_url, strlen(q_url));
             if (added) {
-                
                 webpage_t *new_pg = webpage_new(q_url, depth + 1, NULL);
-                bool res = webpage_fetch(new_pg);
-                if (!res) {
-                    printf("failed to fetch html for %s\n", q_url);
-                }
+                printf("\tID %d, adding to queue %s, id: %d\n", tid, q_url, id);
                 int val = lqput(url_queue, new_pg);
                 if (val != 0) {
                     printf("lqput failed\n");
                 }
-                pagesave(new_pg, ++id, pagedir);
-                printf("saving %s, id: %d\n", q_url, id);
             }
             else {
-                printf("freeing stuff\n");
+                printf("\tID %d, already seen %s\n", tid, q_url);
                 free(q_url);
             }
         }
-        webpage_delete(pg);
+        printf("BOTTOM: %d, num_finished_threads %d\n", tid, num_finished_threads);
+        fflush(stdout);
     }
     
     return NULL;
@@ -183,22 +209,21 @@ int main(int argc, char * argv[]) {
 
     id = 1;
 
-    
-    printf("saving url %s, id: %d\n", seed_url, id);
-    pagesave(seed_page, id, pagedir);
-
     printf("just before thread creation\n");
 
-    
     pthread_t thread_ids[NUM_THREADS];
     for (int i = 0; i < NUM_THREADS; i++) {
-        int val = pthread_create(&thread_ids[i], NULL, perform_crawl, NULL);
+        args_t *st_args = malloc(sizeof(args_t));
+        st_args->id = i;
+        printf("%d\n", st_args->id);
+        int val = pthread_create(&thread_ids[i], NULL, perform_crawl, st_args);
         if (val != 0) {
             printf("thread creation failed: %d\n", i);
             exit(EXIT_FAILURE);
         }
     }
 
+    // need to free the id_structs
     
     for (int i = 0; i < NUM_THREADS; i++) {
         int val = pthread_join(thread_ids[i], NULL);
@@ -208,7 +233,7 @@ int main(int argc, char * argv[]) {
         }
     }
 
-    printf("freeing stuff now\n");
+    printf("finished crawl, freeing stuff now\n");
 
     
     lhapply(url_hashtable, free);
@@ -219,3 +244,5 @@ int main(int argc, char * argv[]) {
 
 	exit(EXIT_SUCCESS);
 }
+
+

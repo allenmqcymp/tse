@@ -25,13 +25,20 @@ void lqclose(lqueue_t *qp) {
     pthread_mutex_unlock(&mutexq);
 }
 
+int lqlen(lqueue_t *qp) {
+    pthread_mutex_lock(&mutexq);
+    int len = qlen(qp);
+    pthread_mutex_unlock(&mutexq);
+    return len;
+}
+
+
 /* put element at the end of the queue
  * returns 0 is successful; nonzero otherwise 
  */
 int32_t lqput(lqueue_t *qp, void *elementp) {
     int ret_val = -1;
     pthread_mutex_lock(&mutexq);
-    printf("putting stuff in lqueue\n");
     ret_val = qput(qp, elementp);
     pthread_mutex_unlock(&mutexq);
     return ret_val;
@@ -80,14 +87,6 @@ void* lqremove(lqueue_t *qp, bool (*searchfn)(void* elementp,const void* keyp), 
     r = qremove(qp, searchfn, skeyp);
     pthread_mutex_unlock(&mutexq);
     return r;
-}
-
-/*
- * Returns a pointer to the front of the queue if possible
- * Else, returns null
- */
-void *lqpeek(lqueue_t *qp) {
-    return qpeek(qp);
 }
 
 /*

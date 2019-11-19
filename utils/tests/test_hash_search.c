@@ -9,7 +9,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <math.h>
-#include "lhash.h"
+#include "hash.h"
 #include "list.h"
 
 #define MAXNM 128

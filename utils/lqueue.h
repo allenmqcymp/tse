@@ -61,3 +61,6 @@ void *lqpeek(lqueue_t *qp);
  */
 bool lqsearch_action(lqueue_t *qp, bool (*searchfn)(void* elementp,const void* keyp), const void* skeyp, void (*fn)(void *ep));
 
+
+int lqlen(lqueue_t *qp);
+

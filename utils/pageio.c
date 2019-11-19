@@ -36,6 +36,8 @@
 */ 
 int32_t pagesave(webpage_t *pagep, int id, char *dirname) {
 
+    printf("inside pagesave, saving %s to %d\n", webpage_getURL(pagep), id);
+
 	int max_id_len = 32;
 
     // strip off the trailing slash of dirname, if it exists

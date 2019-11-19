@@ -10,7 +10,15 @@ TEST_LHASH_CFILES:=$(wildcard test_lhash*.c)
 LHASH_TARGETS:=$(patsubst %.c,%,$(TEST_LHASH_CFILES))
 LHASH_OBJS:=$(patsubst %.c,%.o,$(TEST_LHASH_CFILES))
 
-all: $(LQUEUE_TARGETS) $(LHASH_TARGETS)
+TEST_HASH_CFILES:=$(wildcard test_hash*.c)
+HASH_TARGETS:=$(patsubst %.c,%,$(TEST_HASH_CFILES))
+HASH_OBJS:=$(patsubst %.c,%.o,$(TEST_HASH_CFILES))
+
+TEST_QUEUE_CFILES:=$(wildcard test_queue*.c)
+QUEUE_TARGETS:=$(patsubst %.c,%,$(TEST_QUEUE_CFILES))
+QUEUE_OBJS:=$(patsubst %.c,%.o,$(TEST_QUEUE_CFILES))
+
+all: $(LQUEUE_TARGETS) $(LHASH_TARGETS) $(QUEUE_TARGETS) $(HASH_TARGETS)
 
 $(LQUEUE_TARGETS) : %: %.o 
 	$(CC) $(CFLAGS) $< $(LIBS) -o $@
@@ -24,6 +32,18 @@ $(LHASH_TARGETS) : %: %.o
 $(LHASH_OBJS) : %.o: %.c 
 	$(CC) $(CFLAGS) -c $<
 
+$(HASH_TARGETS) : %: %.o 
+	$(CC) $(CFLAGS) $< $(LIBS) -o $@
+
+$(HASH_OBJS) : %.o: %.c 
+	$(CC) $(CFLAGS) -c $<
+
+$(QUEUE_TARGETS) : %: %.o 
+	$(CC) $(CFLAGS) $< $(LIBS) -o $@
+
+$(QUEUE_OBJS) : %.o: %.c 
+	$(CC) $(CFLAGS) -c $<
+
 clean:
 	rm -rf *.o
-	rm -rf $(LQUEUE_TARGETS) $(LHASH_TARGETS)
+	rm -rf $(LQUEUE_TARGETS) $(LHASH_TARGETS) $(HASH_TARGETS) $(QUEUE_TARGETS)

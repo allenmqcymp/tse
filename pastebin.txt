@@ -1,0 +1,16 @@
+id:1, https://thayer.github.io/engs50/, depth:0
+id:2, https://thayer.github.io/engs50/Labs/, depth:1
+id:3, https://thayer.github.io/engs50/Notes/, depth:2
+id:4, https://thayer.github.io/engs50/Reading/, depth:1
+id:5, https://thayer.github.io/engs50/Resources/, depth:2
+id:6, https://thayer.github.io/engs50/Examples/, depth:1
+id:7, https://thayer.github.io/engs50/Labs/Lab1/, depth:2
+id:8, https://thayer.github.io/engs50/Resources/CodingStyle.html, depth:1
+id:9, https://thayer.github.io/engs50/Labs/Lab2/, depth:2
+id:10, https://thayer.github.io/engs50/Examples/auto, depth:2
+id:11, https://thayer.github.io/engs50/Labs/Lab3/, depth:2
+id:12, https://thayer.github.io/engs50/Labs/Lab4/, depth:2
+id:13, https://thayer.github.io/engs50/Examples/clean, depth:2
+id:14, https://thayer.github.io/engs50/Labs/Lab5/, depth:2
+id:15, https://thayer.github.io/engs50/Labs/Lab6/, depth:2
+id:16, https://thayer.github.io/engs50/Examples/names-Makefile, depth:2

@@ -37,48 +37,74 @@ void qclose(queue_t *qp){
     free(qp);
 }  
 
-// /* put element at the end of the queue
-//  * returns 0 is successful; nonzero otherwise 
-//  */
-// int32_t qput(queue_t *qp, void *elementp){
-//     node_t *node_element = malloc(sizeof(node_t));
-//     if (qp->front == NULL && qp->back == NULL){
-//         node_element->next = NULL;
-//         node_element->data = elementp;
-//         qp->front = node_element;
-//         qp->back = node_element;
-//         return 0;
-//     }else{
-//         node_element->next = NULL;
-//         node_element->data = elementp;
-//         qp->back->next = node_element;
-//         qp->back = node_element;
-//         return 0;
-//     }
-//     return -1;
-// }
-
-// ok so this is the correct queue code
-int32_t qput(queue_t *qp, void *ep) {
-    node_t *np = malloc(sizeof(node_t));
-    // if the queue is empty
-    if (qp->front == NULL) {
-        np->data = ep;
-        np->next = NULL;
-        qp->front = np;
-        qp->back = np;
+/* put element at the end of the queue
+ * returns 0 is successful; nonzero otherwise 
+ */
+int32_t qput(queue_t *qp, void *elementp){
+    node_t *node_element = malloc(sizeof(node_t));
+    if (qp->front == NULL && qp->back == NULL){
+        node_element->next = NULL;
+        node_element->data = elementp;
+        qp->front = node_element;
+        qp->back = node_element;
         return 0;
-    }
-    else {
-        np->data = ep;
-        np->next = NULL;
-        qp->back->next = np;
-        qp->back = np;
+    }else{
+        node_element->next = NULL;
+        node_element->data = elementp;
+        qp->back->next = node_element;
+        qp->back = node_element;
         return 0;
     }
     return -1;
 }
 
+// int32_t qput(queue_t *qp, void *ep) {
+//     node_t *np = malloc(sizeof(node_t));
+//     // if the queue is empty
+//     if (qp->front == NULL) {
+//         np->data = ep;
+//         np->next = NULL;
+//         qp->front = np;
+//         qp->back = np;
+//         return 0;
+//     }
+//     else {
+//         np->data = ep;
+//         np->next = NULL;
+//         qp->back->next = np;
+//         qp->back = np;
+//         return 0;
+//     }
+//     return -1;
+// }
+
+// debugging function to tell us the length of the queue
+int qlen(queue_t *qp) {
+    if (qp->front == NULL) {
+        return 0;
+    }
+    int l = 0;
+    node_t *n = qp->front;
+    while (n) {
+        l++;
+        n = n->next;
+    }
+    return l;
+}
+
+// /* get the first first element from queue, removing it from the queue */
+// void* qget(queue_t *qp){
+//     if (qp->front == NULL){
+//         return NULL;
+//     }
+//     node_t *first_element = qp->front;
+//     qp->front = qp->front->next;
+//     void *d = first_element->data;
+//     free(first_element);
+//     return d;
+// }
+
+// changed the code of qget - the issue is that if there is only one element, qp->back will still point to the node dequeued
 /* get the first first element from queue, removing it from the queue */
 void* qget(queue_t *qp){
     if (qp->front == NULL){
@@ -86,6 +112,9 @@ void* qget(queue_t *qp){
     }
     node_t *first_element = qp->front;
     qp->front = qp->front->next;
+    if (qp->front == NULL) {
+        qp->back = NULL;
+    }
     void *d = first_element->data;
     free(first_element);
     return d;
@@ -122,18 +151,6 @@ void* qsearch(queue_t *qp,
     }
     return NULL;
 }
-
-/*
- * Returns a pointer to the front of the queue if possible
- * Else, returns null
- */
-void *qpeek(queue_t *qp) {
-    if (qp->front) {
-        return qp->front->data;
-    }
-    return NULL;
-}
-
 
 /* search a queue using a supplied boolean function (as in qsearch),
  * removes the element from the queue and returns a pointer to it or
